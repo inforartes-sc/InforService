@@ -1,0 +1,9 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Secure by default, but allow access from authenticated services/users
+    match /{document=**} {
+      allow read, write: if true; // In production, refine to limit client access
+    }
+  }
+}

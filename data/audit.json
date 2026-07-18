@@ -1,0 +1,11 @@
+[
+  {
+    "id": "o6xv1k3",
+    "userId": "user-admin",
+    "userName": "Administrador Demo",
+    "action": "LIMPEZA_BANCO",
+    "details": "Limpou dados de demonstração e ativou o modo Produção real.",
+    "ip": "127.0.0.1",
+    "timestamp": "2026-07-18T18:40:58.782Z"
+  }
+]

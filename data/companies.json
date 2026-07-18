@@ -1,0 +1,31 @@
+[
+  {
+    "id": "comp-1",
+    "penalty": 2,
+    "taxes": 5,
+    "isProduction": true,
+    "categories": [
+      "Consultoria",
+      "Suporte Técnico",
+      "Desenvolvimento Web",
+      "Design Gráfico",
+      "Manutenção"
+    ],
+    "address": "Av. Paulista, 1000 - Bela Vista, São Paulo - SP, CEP 01310-100",
+    "defaultDiscount": 0,
+    "interest": 1,
+    "email": "financeiro@empresademo.com",
+    "paymentMethods": [
+      "Pix",
+      "Dinheiro",
+      "Cartão de Crédito",
+      "Boleto",
+      "Transferência Bancária"
+    ],
+    "primaryColor": "#0f172a",
+    "cnpj": "12.345.678/0001-99",
+    "name": "Empresa Demo de Serviços Ltda",
+    "phone": "(11) 98765-4321",
+    "secondaryColor": "#3b82f6"
+  }
+]

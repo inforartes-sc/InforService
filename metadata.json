@@ -1,0 +1,6 @@
+{
+  "name": "InforService",
+  "description": "Sistema completo para gerenciamento de pagamentos de serviços prestados, com controle de clientes, serviços, parcelamentos, contas a receber, recibos e relatórios.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

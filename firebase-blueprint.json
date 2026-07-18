@@ -1,0 +1,195 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User entity of the application",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string" },
+        "companyId": { "type": "string" }
+      },
+      "required": ["id", "name", "email", "role", "companyId"]
+    },
+    "Company": {
+      "title": "Company",
+      "description": "Company configuration and details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "cnpj": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "address": { "type": "string" },
+        "primaryColor": { "type": "string" },
+        "secondaryColor": { "type": "string" },
+        "categories": { "type": "array" },
+        "paymentMethods": { "type": "array" },
+        "taxes": { "type": "number" },
+        "interest": { "type": "number" },
+        "penalty": { "type": "number" },
+        "defaultDiscount": { "type": "number" }
+      },
+      "required": ["id", "name", "cnpj", "primaryColor", "secondaryColor"]
+    },
+    "Client": {
+      "title": "Client",
+      "description": "Customer/Client of a company",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "cpfCnpj": { "type": "string" },
+        "rg": { "type": "string" },
+        "birthDate": { "type": "string" },
+        "phone": { "type": "string" },
+        "whatsapp": { "type": "string" },
+        "email": { "type": "string" },
+        "cep": { "type": "string" },
+        "address": { "type": "string" },
+        "number": { "type": "string" },
+        "bairro": { "type": "string" },
+        "city": { "type": "string" },
+        "state": { "type": "string" },
+        "complement": { "type": "string" },
+        "notes": { "type": "string" },
+        "attachments": { "type": "array" },
+        "isFavorite": { "type": "boolean" },
+        "companyId": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "name", "whatsapp", "companyId"]
+    },
+    "Service": {
+      "title": "Service",
+      "description": "A service order or agreement",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "serviceNumber": { "type": "string" },
+        "clientId": { "type": "string" },
+        "category": { "type": "string" },
+        "serviceType": { "type": "string" },
+        "description": { "type": "string" },
+        "requestDate": { "type": "string" },
+        "expectedDate": { "type": "string" },
+        "completionDate": { "type": "string" },
+        "serviceValue": { "type": "number" },
+        "discount": { "type": "number" },
+        "additions": { "type": "number" },
+        "finalValue": { "type": "number" },
+        "status": { "type": "string" },
+        "companyId": { "type": "string" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "serviceNumber", "clientId", "category", "serviceValue", "status", "companyId"]
+    },
+    "Payment": {
+      "title": "Payment",
+      "description": "An account receivable or installment",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "serviceId": { "type": "string" },
+        "clientId": { "type": "string" },
+        "amount": { "type": "number" },
+        "dueDate": { "type": "string" },
+        "paymentDate": { "type": "string" },
+        "paidAmount": { "type": "number" },
+        "interest": { "type": "number" },
+        "penalty": { "type": "number" },
+        "discount": { "type": "number" },
+        "paymentMethod": { "type": "string" },
+        "observation": { "type": "string" },
+        "installmentNumber": { "type": "number" },
+        "totalInstallments": { "type": "number" },
+        "status": { "type": "string" },
+        "companyId": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "serviceId", "clientId", "amount", "dueDate", "status", "companyId"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "System usage audit logs",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "action": { "type": "string" },
+        "details": { "type": "string" },
+        "ip": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["id", "userId", "userName", "action", "timestamp"]
+    },
+    "SystemNotification": {
+      "title": "SystemNotification",
+      "description": "Sent or scheduled notification log",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "title", "message", "type", "status", "createdAt"]
+    },
+    "Receipt": {
+      "title": "Receipt",
+      "description": "Generated services receipt or contract",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "serviceId": { "type": "string" },
+        "clientId": { "type": "string" },
+        "hash": { "type": "string" },
+        "qrCode": { "type": "string" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "serviceId", "clientId", "hash", "content", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "System users collection"
+    },
+    "/companies/{companyId}": {
+      "schema": "Company",
+      "description": "Companies configuration and layout"
+    },
+    "/clients/{clientId}": {
+      "schema": "Client",
+      "description": "Clients catalog"
+    },
+    "/services/{serviceId}": {
+      "schema": "Service",
+      "description": "Service orders and tracking"
+    },
+    "/payments/{paymentId}": {
+      "schema": "Payment",
+      "description": "Accounts receivable installments"
+    },
+    "/audit/{auditId}": {
+      "schema": "AuditLog",
+      "description": "Action log audit trail"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "SystemNotification",
+      "description": "System communication logs"
+    },
+    "/receipts/{receiptId}": {
+      "schema": "Receipt",
+      "description": "Generated receipts"
+    }
+  }
+}
