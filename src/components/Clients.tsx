@@ -24,22 +24,234 @@ import {
   Clock, 
   CheckCircle, 
   X,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Printer
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface ClientsProps {
   clients: Client[];
   services: Service[];
+  payments?: any[];
+  company?: any;
   onRefresh: () => void;
   currentUser: any;
 }
 
-export default function Clients({ clients, services, onRefresh, currentUser }: ClientsProps) {
+export default function Clients({ clients, services, payments = [], company, onRefresh, currentUser }: ClientsProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [viewHistoryClient, setViewHistoryClient] = useState<Client | null>(null);
+
+  // Print formal debt statement (Extrato de Débito) for the client
+  const handlePrintHistory = (client: Client) => {
+    const clientServices = services.filter(s => s.clientId === client.id);
+    // Open invoices: anything that isn't fully paid or cancelled
+    const openInvoices = clientServices.filter(
+      s => s.status !== 'Pago' && s.status !== 'Cancelado'
+    );
+    // Also check payments table for pending installments
+    const openPayments = payments.filter(
+      p => p.clientId === client.id && p.status !== 'Pago' && p.status !== 'Cancelado'
+    );
+
+    // Prefer payment records if they exist, otherwise fall back to services
+    const usePayments = openPayments.length > 0;
+    const totalDue = usePayments
+      ? openPayments.reduce((sum, p) => sum + (p.amount || 0), 0)
+      : openInvoices.reduce((sum, s) => sum + (s.finalValue || 0), 0);
+
+    const today = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+    const companyName = company?.name || 'InforService';
+    const companyCnpj = company?.cnpj || '';
+    const companyPhone = company?.phone || '';
+    const companyEmail = company?.email || '';
+    const companyAddress = company?.address || '';
+
+    const invoiceRows = usePayments
+      ? openPayments.map((p, i) => {
+          const relService = services.find(s => s.id === p.serviceId);
+          const isOverdue = p.dueDate && new Date(p.dueDate + 'T23:59:59') < new Date();
+          return `
+          <tr>
+            <td style="padding:10px 14px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#4f46e5;font-family:monospace;font-weight:700">${relService?.serviceNumber || `FAT-${String(i + 1).padStart(3, '0')}`}</td>
+            <td style="padding:10px 14px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#334155">${relService?.serviceType || p.observation || 'Serviço'}</td>
+            <td style="padding:10px 14px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#64748b">${p.installmentNumber ? `${p.installmentNumber}/${p.totalInstallments}` : '1/1'}</td>
+            <td style="padding:10px 14px;border-bottom:1px solid #f1f5f9;font-size:11px;color:${isOverdue ? '#dc2626' : '#64748b'};font-weight:${isOverdue ? '700' : '400'}">${p.dueDate ? new Date(p.dueDate + 'T12:00:00').toLocaleDateString('pt-BR') : '-'}${isOverdue ? ' ⚠' : ''}</td>
+            <td style="padding:10px 14px;border-bottom:1px solid #f1f5f9;font-size:12px;font-weight:700;text-align:right;font-family:monospace;color:#1e293b">R$ ${(p.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+          </tr>`;
+        }).join('')
+      : openInvoices.map(s => {
+          const isOverdue = s.expectedDate && new Date(s.expectedDate + 'T23:59:59') < new Date();
+          return `
+          <tr>
+            <td style="padding:10px 14px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#4f46e5;font-family:monospace;font-weight:700">${s.serviceNumber || '-'}</td>
+            <td style="padding:10px 14px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#334155">${s.serviceType || '-'}</td>
+            <td style="padding:10px 14px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#64748b">1/1</td>
+            <td style="padding:10px 14px;border-bottom:1px solid #f1f5f9;font-size:11px;color:${isOverdue ? '#dc2626' : '#64748b'};font-weight:${isOverdue ? '700' : '400'}">${s.expectedDate ? new Date(s.expectedDate + 'T12:00:00').toLocaleDateString('pt-BR') : '-'}${isOverdue ? ' ⚠' : ''}</td>
+            <td style="padding:10px 14px;border-bottom:1px solid #f1f5f9;font-size:12px;font-weight:700;text-align:right;font-family:monospace;color:#1e293b">R$ ${(s.finalValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+          </tr>`;
+        }).join('');
+
+    const hasItems = usePayments ? openPayments.length > 0 : openInvoices.length > 0;
+
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head>
+<meta charset="UTF-8" />
+<title>Extrato de Débito — ${client.name}</title>
+<style>
+  @page { margin: 20mm 18mm; }
+  @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .no-print { display: none; } }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; color: #1e293b; background: #fff; font-size: 13px; line-height: 1.5; }
+
+  /* Letterhead */
+  .letterhead { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 3px solid #1e293b; margin-bottom: 28px; }
+  .company-name { font-size: 22px; font-weight: 900; color: #1e293b; letter-spacing: -0.5px; }
+  .company-details { font-size: 11px; color: #64748b; margin-top: 4px; line-height: 1.7; }
+  .doc-info { text-align: right; }
+  .doc-title { font-size: 11px; text-transform: uppercase; font-weight: 800; letter-spacing: 0.1em; color: #dc2626; margin-bottom: 4px; }
+  .doc-date { font-size: 11px; color: #64748b; }
+
+  /* Client block */
+  .client-block { background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #1e293b; border-radius: 6px; padding: 16px 20px; margin-bottom: 24px; display: flex; justify-content: space-between; }
+  .client-label { font-size: 10px; text-transform: uppercase; font-weight: 700; color: #94a3b8; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .client-name { font-size: 18px; font-weight: 800; color: #1e293b; }
+  .client-info { font-size: 11px; color: #64748b; margin-top: 3px; }
+  .client-address { text-align: right; font-size: 11px; color: #64748b; line-height: 1.7; }
+
+  /* Summary boxes */
+  .summary { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 28px; }
+  .summary-box { border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 16px; }
+  .summary-label { font-size: 10px; text-transform: uppercase; font-weight: 700; color: #94a3b8; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .summary-value { font-size: 15px; font-weight: 800; color: #1e293b; font-family: monospace; }
+  .summary-box.highlight { background: #fef2f2; border-color: #fecaca; }
+  .summary-box.highlight .summary-value { color: #dc2626; }
+
+  /* Table */
+  .section-title { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; margin-bottom: 8px; }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { background: #1e293b; }
+  thead th { color: #fff; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; padding: 10px 14px; text-align: left; }
+  thead th:last-child { text-align: right; }
+  tbody tr:nth-child(even) { background: #f8fafc; }
+  .total-row td { background: #1e293b; color: #fff; font-weight: 800; font-size: 14px; padding: 12px 14px; }
+  .total-row td:last-child { text-align: right; font-family: monospace; }
+
+  /* Total due box */
+  .total-due-box { background: #fef2f2; border: 2px solid #fca5a5; border-radius: 10px; padding: 20px 24px; margin-top: 24px; display: flex; justify-content: space-between; align-items: center; }
+  .total-due-label { font-size: 13px; font-weight: 700; color: #7f1d1d; }
+  .total-due-amount { font-size: 28px; font-weight: 900; color: #dc2626; font-family: monospace; }
+
+  /* Payment info */
+  .payment-section { margin-top: 24px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 20px; }
+  .payment-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #475569; margin-bottom: 10px; }
+  .payment-methods { font-size: 12px; color: #64748b; }
+
+  /* Footer */
+  .footer { margin-top: 32px; border-top: 1px solid #e2e8f0; padding-top: 14px; display: flex; justify-content: space-between; font-size: 10px; color: #94a3b8; }
+  .footer-note { font-size: 11px; color: #64748b; margin-top: 8px; text-align: center; font-style: italic; }
+</style></head><body>
+
+  <!-- Letterhead -->
+  <div class="letterhead">
+    <div>
+      <div class="company-name">${companyName}</div>
+      <div class="company-details">
+        ${companyCnpj ? `CNPJ: ${companyCnpj}<br>` : ''}
+        ${companyAddress ? `${companyAddress}<br>` : ''}
+        ${companyPhone ? `Tel: ${companyPhone}` : ''}${companyEmail ? ` &bull; ${companyEmail}` : ''}
+      </div>
+    </div>
+    <div class="doc-info">
+      <div class="doc-title">Extrato de Débito</div>
+      <div class="doc-date">Emitido em ${today}</div>
+    </div>
+  </div>
+
+  <!-- Client info -->
+  <div class="client-block">
+    <div>
+      <div class="client-label">Devedor / Cliente</div>
+      <div class="client-name">${client.name}</div>
+      <div class="client-info">${client.cpfCnpj ? `CPF/CNPJ: ${client.cpfCnpj}` : ''}${client.rg ? ` &bull; RG: ${client.rg}` : ''}</div>
+      ${client.phone ? `<div class="client-info">Tel: ${client.phone}${client.whatsapp ? ` &bull; WhatsApp: ${client.whatsapp}` : ''}</div>` : ''}
+      ${client.email ? `<div class="client-info">${client.email}</div>` : ''}
+    </div>
+    <div class="client-address">
+      ${client.address ? `${client.address}${client.number ? ', ' + client.number : ''}<br>` : ''}
+      ${client.bairro ? `${client.bairro}<br>` : ''}
+      ${client.city ? `${client.city}${client.state ? ' - ' + client.state : ''}` : ''}
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary">
+    <div class="summary-box">
+      <div class="summary-label">Total de OS / Projetos</div>
+      <div class="summary-value">${clientServices.length}</div>
+    </div>
+    <div class="summary-box">
+      <div class="summary-label">Faturas em Aberto</div>
+      <div class="summary-value">${usePayments ? openPayments.length : openInvoices.length}</div>
+    </div>
+    <div class="summary-box highlight">
+      <div class="summary-label">Total a Pagar</div>
+      <div class="summary-value">R$ ${totalDue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+    </div>
+  </div>
+
+  <!-- Invoice table -->
+  <div class="section-title">Faturas em Aberto</div>
+  ${!hasItems
+    ? '<p style="color:#94a3b8;font-size:13px;text-align:center;padding:24px;border:1px dashed #e2e8f0;border-radius:8px">✓ Nenhuma fatura em aberto para este cliente.</p>'
+    : `<table>
+      <thead><tr>
+        <th>Nº OS / Fatura</th>
+        <th>Descrição do Serviço</th>
+        <th>Parcela</th>
+        <th>Vencimento</th>
+        <th style="text-align:right">Valor (R$)</th>
+      </tr></thead>
+      <tbody>${invoiceRows}</tbody>
+      <tfoot><tr class="total-row">
+        <td colspan="4"><strong>TOTAL EM ABERTO</strong></td>
+        <td>R$ ${totalDue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+      </tr></tfoot>
+    </table>
+
+    <div class="total-due-box">
+      <div>
+        <div class="total-due-label">Valor Total a Pagar</div>
+        <div style="font-size:11px;color:#991b1b;margin-top:2px">${usePayments ? openPayments.length : openInvoices.length} fatura(s) em aberto</div>
+      </div>
+      <div class="total-due-amount">R$ ${totalDue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+    </div>`
+  }
+
+  <!-- Payment instructions -->
+  ${company?.paymentMethods?.length > 0 ? `
+  <div class="payment-section">
+    <div class="payment-title">💳 Formas de Pagamento Aceitas</div>
+    <div class="payment-methods">${company.paymentMethods.join(' &bull; ')}</div>
+  </div>` : ''}
+
+  <div class="footer-note">Em caso de dúvidas, entre em contato: ${companyPhone || companyEmail || companyName}</div>
+
+  <div class="footer">
+    <span>${companyName} &mdash; Extrato de Débito</span>
+    <span>Emitido em ${today}</span>
+  </div>
+
+</body></html>`;
+
+    const win = window.open('', '_blank', 'width=960,height=800');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+      win.onload = () => { win.print(); };
+    }
+  };
 
   // Form states
   const [name, setName] = useState('');
@@ -143,8 +355,8 @@ export default function Clients({ clients, services, onRefresh, currentUser }: C
   // Submit form
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !cpfCnpj) {
-      setErrorMsg('Nome e CPF/CNPJ são campos obrigatórios.');
+    if (!name) {
+      setErrorMsg('Nome é campo obrigatório.');
       return;
     }
 
@@ -284,6 +496,7 @@ export default function Clients({ clients, services, onRefresh, currentUser }: C
           filteredClients.map(client => {
             const clientServices = services.filter(s => s.clientId === client.id);
             const activeServices = clientServices.filter(s => s.status !== 'Finalizado' && s.status !== 'Cancelado').length;
+            const totalSpent = clientServices.reduce((sum, s) => sum + s.finalValue, 0);
 
             return (
               <motion.div
@@ -299,6 +512,9 @@ export default function Clients({ clients, services, onRefresh, currentUser }: C
                         {client.isFavorite && <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />}
                       </h3>
                       <span className="text-[10px] text-slate-400 block font-mono mt-0.5">{client.cpfCnpj}</span>
+                      <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-mono font-bold mt-1 inline-block">
+                        Fatura Total: R$ {totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
                     </div>
                     <div className="flex items-center gap-1">
                       <button
@@ -382,12 +598,21 @@ export default function Clients({ clients, services, onRefresh, currentUser }: C
                   <span className="text-[10px] uppercase font-bold text-slate-400 tracking-widest block font-sans">Histórico do Cliente</span>
                   <h3 className="text-lg font-bold text-slate-900 font-sans">{viewHistoryClient.name}</h3>
                 </div>
-                <button
-                  onClick={() => setViewHistoryClient(null)}
-                  className="p-1.5 hover:bg-slate-50 rounded-lg cursor-pointer text-slate-500"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => handlePrintHistory(viewHistoryClient)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-semibold cursor-pointer transition-colors"
+                    title="Imprimir histórico de pendências"
+                  >
+                    <Printer className="w-3.5 h-3.5" /> Imprimir
+                  </button>
+                  <button
+                    onClick={() => setViewHistoryClient(null)}
+                    className="p-1.5 hover:bg-slate-50 rounded-lg cursor-pointer text-slate-500"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               {/* Stats */}
@@ -501,10 +726,9 @@ export default function Clients({ clients, services, onRefresh, currentUser }: C
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700">CPF / CNPJ *</label>
+                    <label className="block text-xs font-semibold text-slate-700">CPF / CNPJ</label>
                     <input
                       type="text"
-                      required
                       value={cpfCnpj}
                       onChange={(e) => setCpfCnpj(e.target.value)}
                       placeholder="000.000.000-00 ou 00.000.000/0001-00"
@@ -512,10 +736,9 @@ export default function Clients({ clients, services, onRefresh, currentUser }: C
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700">WhatsApp *</label>
+                    <label className="block text-xs font-semibold text-slate-700">WhatsApp</label>
                     <input
                       type="text"
-                      required
                       value={whatsapp}
                       onChange={(e) => setWhatsapp(e.target.value)}
                       placeholder="(00) 90000-0000"

@@ -1,0 +1,10 @@
+[
+  {
+    "id": "user-super",
+    "name": "Super Administrador",
+    "role": "SUPER_ADMIN",
+    "email": "inforartes.ap@gmail.com",
+    "companyId": "comp-1",
+    "passwordHash": "$2b$10$IOrzrGWuDOa/bbomihELPOasmseNUI980MID9.wMpdW7wwdcuCK8W"
+  }
+]

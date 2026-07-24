@@ -21,7 +21,9 @@ import {
   X,
   RefreshCw,
   Mail,
-  Database
+  Database,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -60,9 +62,30 @@ export default function Settings({ company, onRefreshCompany, currentUser }: Set
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [dbStatus, setDbStatus] = useState<{ connected: boolean; type: string; message: string } | null>(null);
+  const [loadingStatus, setLoadingStatus] = useState(true);
+
+  const checkDbStatus = async () => {
+    try {
+      setLoadingStatus(true);
+      const status = await api.getDbStatus();
+      setDbStatus(status);
+    } catch (err) {
+      console.error('Error fetching DB status:', err);
+      setDbStatus({ connected: false, type: 'error', message: 'Erro ao verificar conexão' });
+    } finally {
+      setLoadingStatus(false);
+    }
+  };
+
+  useEffect(() => {
+    checkDbStatus();
+  }, []);
+
   // Load configuration and users on render
   useEffect(() => {
-    if (company) {
+    if (company && !isInitialized) {
       setName(company.name || '');
       setCnpj(company.cnpj || '');
       setPhone(company.phone || '');
@@ -73,8 +96,9 @@ export default function Settings({ company, onRefreshCompany, currentUser }: Set
       setTaxes(company.taxes || 0);
       setInterest(company.interest || 0);
       setPenalty(company.penalty || 0);
+      setIsInitialized(true);
     }
-  }, [company]);
+  }, [company, isInitialized]);
 
   const loadUsers = async () => {
     if (currentUser?.role === UserRole.SUPER_ADMIN) {
@@ -148,6 +172,7 @@ export default function Settings({ company, onRefreshCompany, currentUser }: Set
         penalty
       });
       setSuccessMsg('Configurações da empresa salvas com sucesso!');
+      setIsInitialized(false); // allow re-initializing values with updated data from server
       onRefreshCompany();
     } catch (err: any) {
       setErrorMsg(err.message || 'Erro ao salvar configurações.');
@@ -510,13 +535,50 @@ export default function Settings({ company, onRefreshCompany, currentUser }: Set
                       <Trash2 className="w-4 h-4" /> Limpar Dados de Demonstração
                     </button>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={handleRestoreDemo}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-indigo-200 hover:bg-indigo-50 text-indigo-600 rounded-xl text-xs font-bold transition-all cursor-pointer"
-                    >
-                      <RefreshCw className="w-4 h-4" /> Ativar Demonstração (Testes)
-                    </button>
+                    <div className="pt-2 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Status da Conexão</span>
+                        <button 
+                          onClick={checkDbStatus}
+                          disabled={loadingStatus}
+                          type="button"
+                          className="p-1 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-50 transition-all cursor-pointer disabled:opacity-50"
+                          title="Atualizar Conexão"
+                        >
+                          <RefreshCw className={`w-3.5 h-3.5 ${loadingStatus ? 'animate-spin' : ''}`} />
+                        </button>
+                      </div>
+                      {loadingStatus ? (
+                        <div className="flex items-center gap-2 text-slate-500 py-1">
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          <span className="text-[11px] font-medium">Verificando status...</span>
+                        </div>
+                      ) : (
+                        <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-xs ${
+                          dbStatus?.connected
+                            ? dbStatus.type === 'local'
+                              ? 'bg-blue-50 border-blue-100 text-blue-700'
+                              : 'bg-emerald-50 border-emerald-100 text-emerald-700'
+                            : 'bg-rose-50 border-rose-100 text-rose-700'
+                        }`}>
+                          {dbStatus?.connected ? (
+                            <Wifi className="w-5 h-5 shrink-0" />
+                          ) : (
+                            <WifiOff className="w-5 h-5 shrink-0" />
+                          )}
+                          <div className="flex flex-col">
+                            <span className="font-extrabold">{dbStatus?.message || 'Status Desconhecido'}</span>
+                            <span className="text-[10px] opacity-75 mt-0.5">
+                              {dbStatus?.type === 'local'
+                                ? 'Dados salvos localmente (/data)'
+                                : dbStatus?.type === 'firebase'
+                                  ? 'Sincronizado com o Firestore em nuvem'
+                                  : 'Sem comunicação com o banco'}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               )}

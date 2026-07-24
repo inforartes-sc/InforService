@@ -1,11 +1,1235 @@
 [
   {
-    "id": "o6xv1k3",
-    "userId": "user-admin",
-    "userName": "Administrador Demo",
-    "action": "LIMPEZA_BANCO",
-    "details": "Limpou dados de demonstração e ativou o modo Produção real.",
+    "id": "42xlzch",
+    "userId": "user-super",
+    "userName": "Super Administrador",
+    "action": "LOGIN",
+    "details": "Efetuou login no sistema com sucesso",
     "ip": "127.0.0.1",
-    "timestamp": "2026-07-18T18:40:58.782Z"
+    "timestamp": "2026-07-24T22:28:31.620Z"
+  },
+  {
+    "id": "248lwcu",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:26:57.030Z"
+  },
+  {
+    "id": "1cvj6h3",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:25:40.573Z"
+  },
+  {
+    "id": "ari8fqx",
+    "ip": "127.0.0.1",
+    "action": "EDIÇÃO",
+    "userId": "user-super",
+    "details": "Editou o usuário: Super Administrador",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:25:02.976Z"
+  },
+  {
+    "id": "5ilo8pg",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:22:40.129Z"
+  },
+  {
+    "id": "3ajd0xx",
+    "ip": "127.0.0.1",
+    "action": "EDIÇÃO",
+    "userId": "user-super",
+    "details": "Atualizou parcela financeira ID pay-ul68lcf. Status: Parcialmente pago",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:08:28.255Z"
+  },
+  {
+    "id": "un1fnoq",
+    "ip": "127.0.0.1",
+    "action": "EDIÇÃO",
+    "userId": "user-super",
+    "details": "Atualizou parcela financeira ID pay-ul68lcf. Status: Parcialmente pago",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:07:03.692Z"
+  },
+  {
+    "id": "10p8hvu",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:05:38.043Z"
+  },
+  {
+    "id": "wvcvugx",
+    "ip": "127.0.0.1",
+    "action": "EDIÇÃO",
+    "userId": "user-super",
+    "details": "Atualizou parcela financeira ID pay-ul68lcf. Status: Pago",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:04:45.523Z"
+  },
+  {
+    "id": "6q3xlj5",
+    "ip": "127.0.0.1",
+    "action": "EDIÇÃO",
+    "userId": "user-super",
+    "details": "Atualizou parcela financeira ID pay-ul68lcf. Status: Parcialmente pago",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:01:00.855Z"
+  },
+  {
+    "id": "dq8wvv3",
+    "ip": "127.0.0.1",
+    "action": "EDIÇÃO",
+    "userId": "user-super",
+    "details": "Atualizou parcela financeira ID pay-ul68lcf. Status: Pago",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T21:56:03.221Z"
+  },
+  {
+    "id": "9mswi2u",
+    "ip": "127.0.0.1",
+    "action": "EDIÇÃO",
+    "userId": "user-super",
+    "details": "Atualizou parcela financeira ID pay-ul68lcf. Status: Parcialmente pago",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T21:55:21.983Z"
+  },
+  {
+    "id": "03mhzrk",
+    "ip": "127.0.0.1",
+    "action": "EDIÇÃO",
+    "userId": "user-super",
+    "details": "Atualizou parcela financeira ID pay-ul68lcf. Status: Pago",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T21:49:43.470Z"
+  },
+  {
+    "id": "wkqmxd2",
+    "ip": "127.0.0.1",
+    "action": "EDIÇÃO",
+    "userId": "user-super",
+    "details": "Atualizou parcela financeira ID pay-ul68lcf. Status: Pago",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T21:48:59.904Z"
+  },
+  {
+    "id": "olcpbb9",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T21:45:28.527Z"
+  },
+  {
+    "id": "7m2982o",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T21:45:17.269Z"
+  },
+  {
+    "id": "9xavmfu",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:04:11.733Z"
+  },
+  {
+    "id": "eh7rze1",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:17:24.794Z"
+  },
+  {
+    "id": "0jpkb58",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:22:43.134Z"
+  },
+  {
+    "id": "emdrdke",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:33:08.136Z"
+  },
+  {
+    "id": "esulfty",
+    "ip": "127.0.0.1",
+    "action": "LIMPEZA_BANCO",
+    "userId": "user-super",
+    "details": "Limpou dados de demonstração e ativou o modo Produção real.",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T22:19:23.910Z"
+  },
+  {
+    "id": "9litrvc",
+    "ip": "127.0.0.1",
+    "action": "EDIÇÃO",
+    "userId": "user-super",
+    "details": "Atualizou parcela financeira ID pay-ul68lcf. Status: Pago",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:07:35.205Z"
+  },
+  {
+    "id": "j543afw",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-23T00:42:15.460Z"
+  },
+  {
+    "id": "7agzqrz",
+    "ip": "127.0.0.1",
+    "action": "CADASTRO",
+    "userId": "user-super",
+    "details": "Criou serviço/OS: OS-2026-008 e gerou parcela financeira",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-23T00:40:46.258Z"
+  },
+  {
+    "id": "50rloid",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:03:39.130Z"
+  },
+  {
+    "id": "5329gbh",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:13:26.697Z"
+  },
+  {
+    "id": "53x0im0",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:21:46.669Z"
+  },
+  {
+    "id": "545e57r",
+    "ip": "127.0.0.1",
+    "action": "CADASTRO",
+    "userId": "user-super",
+    "details": "Criou serviço/OS: OS-2026-003 e gerou parcela financeira",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:12:51.132Z"
+  },
+  {
+    "id": "5u27xfo",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:40:27.519Z"
+  },
+  {
+    "id": "1yo75a2",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:14:33.592Z"
+  },
+  {
+    "id": "if18h2r",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:31:55.553Z"
+  },
+  {
+    "id": "rf5zivi",
+    "ip": "127.0.0.1",
+    "action": "EDIÇÃO",
+    "userId": "user-super",
+    "details": "Atualizou o serviço: OS-2026-008",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-23T00:42:03.394Z"
+  },
+  {
+    "id": "jkwhh5a",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:36:40.271Z"
+  },
+  {
+    "id": "jn6fcp4",
+    "ip": "127.0.0.1",
+    "action": "EDIÇÃO",
+    "userId": "user-super",
+    "details": "Atualizou o serviço: OS-2026-002",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:03:07.974Z"
+  },
+  {
+    "id": "kpl9a27",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:13:15.590Z"
+  },
+  {
+    "id": "ksamkn4",
+    "ip": "127.0.0.1",
+    "action": "CADASTRO",
+    "userId": "user-super",
+    "details": "Criou serviço/OS: OS-2026-003 e gerou parcela financeira",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:09:07.312Z"
+  },
+  {
+    "id": "lbta346",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:39:13.896Z"
+  },
+  {
+    "id": "234ugwh",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:43:58.794Z"
+  },
+  {
+    "id": "cn8qio6",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:04:39.977Z"
+  },
+  {
+    "id": "cw6m5jx",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:32:13.098Z"
+  },
+  {
+    "id": "d01kctk",
+    "ip": "127.0.0.1",
+    "action": "EDIÇÃO",
+    "userId": "user-super",
+    "details": "Atualizou as configurações da empresa",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T22:20:26.724Z"
+  },
+  {
+    "id": "3c0np4z",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T21:56:09.091Z"
+  },
+  {
+    "id": "hsqvou9",
+    "ip": "127.0.0.1",
+    "action": "EXCLUSÃO",
+    "userId": "user-super",
+    "details": "Excluiu o serviço OS-2026-001 e suas parcelas financeiras",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:11:17.966Z"
+  },
+  {
+    "id": "ia1mo1j",
+    "ip": "127.0.0.1",
+    "action": "EDIÇÃO",
+    "userId": "user-super",
+    "details": "Atualizou as configurações da empresa",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T22:20:38.371Z"
+  },
+  {
+    "id": "uyvjcc8",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:03:51.375Z"
+  },
+  {
+    "id": "mvjqg66",
+    "ip": "127.0.0.1",
+    "action": "CADASTRO",
+    "userId": "user-super",
+    "details": "Criou serviço/OS: OS-2026-005 e gerou parcela financeira",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-23T00:23:42.830Z"
+  },
+  {
+    "id": "bi0nb9c",
+    "ip": "127.0.0.1",
+    "action": "CADASTRO",
+    "userId": "user-super",
+    "details": "Criou serviço/OS: OS-2026-004 e gerou parcela financeira",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-23T00:22:41.125Z"
+  },
+  {
+    "id": "uepl3m3",
+    "ip": "127.0.0.1",
+    "action": "EDIÇÃO",
+    "userId": "user-super",
+    "details": "Atualizou o serviço: OS-2026-009",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-23T00:42:28.863Z"
+  },
+  {
+    "id": "9qe6k0y",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:17:30.831Z"
+  },
+  {
+    "id": "zy5typz",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:42:26.942Z"
+  },
+  {
+    "id": "rw56ecd",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:43:19.579Z"
+  },
+  {
+    "id": "sj8utbo",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:17:42.286Z"
+  },
+  {
+    "id": "ptuwifz",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:49:42.401Z"
+  },
+  {
+    "id": "rhb3u29",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:17:27.742Z"
+  },
+  {
+    "id": "rq2k73y",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:48:06.979Z"
+  },
+  {
+    "id": "bfsqwf0",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:05:17.389Z"
+  },
+  {
+    "id": "742h8dv",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:05:05.645Z"
+  },
+  {
+    "id": "1lsy0zp",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:05:02.732Z"
+  },
+  {
+    "id": "2ni3l5j",
+    "ip": "127.0.0.1",
+    "action": "CADASTRO",
+    "userId": "user-super",
+    "details": "Criou serviço/OS: OS-2026-006 e gerou parcela financeira",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-23T00:33:12.765Z"
+  },
+  {
+    "id": "ac04gwi",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:44:39.201Z"
+  },
+  {
+    "id": "adhytms",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:46:32.015Z"
+  },
+  {
+    "id": "gus2ufb",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:23:52.301Z"
+  },
+  {
+    "id": "haoheoa",
+    "ip": "127.0.0.1",
+    "action": "CADASTRO",
+    "userId": "user-super",
+    "details": "Criou serviço/OS: OS-2026-002 e gerou parcela financeira",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:12:11.913Z"
+  },
+  {
+    "id": "06r4d7v",
+    "ip": "127.0.0.1",
+    "action": "EDIÇÃO",
+    "userId": "user-super",
+    "details": "Atualizou as configurações da empresa",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T22:23:00.569Z"
+  },
+  {
+    "id": "l52a0lv",
+    "ip": "127.0.0.1",
+    "action": "CADASTRO",
+    "userId": "user-super",
+    "details": "Criou serviço/OS: OS-2026-009 e gerou parcela financeira",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-23T00:41:08.496Z"
+  },
+  {
+    "id": "tq5rswq",
+    "ip": "127.0.0.1",
+    "action": "CADASTRO",
+    "userId": "user-super",
+    "details": "Criou serviço/OS: OS-2026-007 e gerou parcela financeira",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-23T00:40:25.611Z"
+  },
+  {
+    "id": "occlsce",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:22:48.489Z"
+  },
+  {
+    "id": "5or6u31",
+    "ip": "127.0.0.1",
+    "action": "EDIÇÃO",
+    "userId": "user-super",
+    "details": "Atualizou parcela financeira ID pay-ul68lcf. Status: Pago",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:22:12.580Z"
+  },
+  {
+    "id": "j4wbfqt",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-23T00:42:08.546Z"
+  },
+  {
+    "id": "mdvxez4",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-23T00:01:13.135Z"
+  },
+  {
+    "id": "mwtfedi",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:16:04.682Z"
+  },
+  {
+    "id": "92mu8bx",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:04:50.084Z"
+  },
+  {
+    "id": "rvj6lk3",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:21:40.046Z"
+  },
+  {
+    "id": "ql9czan",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:05:35.198Z"
+  },
+  {
+    "id": "8a98pjj",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:05:23.351Z"
+  },
+  {
+    "id": "ulccna5",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:05:20.357Z"
+  },
+  {
+    "id": "fe6846s",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:05:08.779Z"
+  },
+  {
+    "id": "lkk1n31",
+    "ip": "127.0.0.1",
+    "action": "EDIÇÃO",
+    "userId": "user-super",
+    "details": "Atualizou o serviço: OS-2026-002",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:03:29.234Z"
+  },
+  {
+    "id": "7otkx9l",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:24:38.422Z"
+  },
+  {
+    "id": "272cbe1",
+    "ip": "127.0.0.1",
+    "action": "CADASTRO",
+    "userId": "user-super",
+    "details": "Criou serviço/OS: OS-2026-001",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T22:57:35.920Z"
+  },
+  {
+    "id": "2h6wmy6",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:25:36.323Z"
+  },
+  {
+    "id": "oml1968",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:22:45.905Z"
+  },
+  {
+    "id": "4cjv7km",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:13:34.037Z"
+  },
+  {
+    "id": "6o8z50t",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:22:59.619Z"
+  },
+  {
+    "id": "3fqswcj",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:13:04.878Z"
+  },
+  {
+    "id": "6ywdqat",
+    "ip": "127.0.0.1",
+    "action": "EDIÇÃO",
+    "userId": "user-super",
+    "details": "Atualizou as configurações da empresa",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T22:20:00.372Z"
+  },
+  {
+    "id": "1rpkpqo",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:06:10.894Z"
+  },
+  {
+    "id": "i7k4fkq",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:05:43.807Z"
+  },
+  {
+    "id": "nlvr5py",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-23T00:21:30.170Z"
+  },
+  {
+    "id": "iu53vuc",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:05:32.307Z"
+  },
+  {
+    "id": "o6qoc95",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:59:10.756Z"
+  },
+  {
+    "id": "vlq6lis",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:05:11.465Z"
+  },
+  {
+    "id": "ozw54jh",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:14:38.265Z"
+  },
+  {
+    "id": "8kepdtr",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:05:26.316Z"
+  },
+  {
+    "id": "8xh7zd7",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:04:56.536Z"
+  },
+  {
+    "id": "1e8y8ne",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:17:21.106Z"
+  },
+  {
+    "id": "iob7jmo",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:17:45.243Z"
+  },
+  {
+    "id": "05gd954",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-23T00:21:23.626Z"
+  },
+  {
+    "id": "mh7urhl",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:04:59.599Z"
+  },
+  {
+    "id": "oeklafq",
+    "ip": "127.0.0.1",
+    "action": "EXCLUSÃO",
+    "userId": "user-super",
+    "details": "Excluiu o serviço OS-2026-002 e suas parcelas financeiras",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:11:23.784Z"
+  },
+  {
+    "id": "f9xi7t6",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:05:40.811Z"
+  },
+  {
+    "id": "n9064i9",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-23T00:41:47.185Z"
+  },
+  {
+    "id": "fo1apl2",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-23T00:42:32.487Z"
+  },
+  {
+    "id": "w2gwlvu",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:13:20.104Z"
+  },
+  {
+    "id": "wnqg01u",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:35:50.453Z"
+  },
+  {
+    "id": "13c9fpk",
+    "ip": "127.0.0.1",
+    "action": "CADASTRO",
+    "userId": "user-super",
+    "details": "Cadastrou o cliente: Ari Serigrafia",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:00:54.697Z"
+  },
+  {
+    "id": "xtcrefw",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:34:05.418Z"
+  },
+  {
+    "id": "xk1fzf9",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:27:38.407Z"
+  },
+  {
+    "id": "ljzjt2e",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:05:29.513Z"
+  },
+  {
+    "id": "0a4m4op",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:15:01.121Z"
+  },
+  {
+    "id": "5or24do",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:04:53.391Z"
+  },
+  {
+    "id": "z3jskmu",
+    "ip": "127.0.0.1",
+    "action": "CADASTRO",
+    "userId": "user-super",
+    "details": "Cadastrou o cliente: West Envelopamento",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:00:25.571Z"
+  },
+  {
+    "id": "zah74gz",
+    "ip": "127.0.0.1",
+    "action": "EXCLUSÃO",
+    "userId": "user-super",
+    "details": "Excluiu o usuário: Administrador Demo",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T22:21:55.365Z"
+  },
+  {
+    "id": "9mhz6pf",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:05:49.205Z"
+  },
+  {
+    "id": "pztql8l",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:05:46.352Z"
+  },
+  {
+    "id": "ooh6cfw",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:13:00.407Z"
+  },
+  {
+    "id": "4t0lhrh",
+    "ip": "127.0.0.1",
+    "action": "CADASTRO",
+    "userId": "user-super",
+    "details": "Criou serviço/OS: OS-2026-002",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T22:58:38.299Z"
+  },
+  {
+    "id": "28kw8xg",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:22:22.793Z"
+  },
+  {
+    "id": "ew2rf3l",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:22:19.557Z"
+  },
+  {
+    "id": "zolb3y1",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:47:07.621Z"
+  },
+  {
+    "id": "cgcaz7u",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:46:08.015Z"
+  },
+  {
+    "id": "v80lcre",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:38:22.751Z"
+  },
+  {
+    "id": "yqvzjr1",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-23T00:42:12.025Z"
+  },
+  {
+    "id": "biseufg",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:04:52.863Z"
+  },
+  {
+    "id": "by8c206",
+    "ip": "127.0.0.1",
+    "action": "CADASTRO",
+    "userId": "user-super",
+    "details": "Cadastrou o cliente: Marinalva Morais",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T22:34:15.031Z"
+  },
+  {
+    "id": "w0eo744",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:34:33.280Z"
+  },
+  {
+    "id": "xg9q840",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:22:25.650Z"
+  },
+  {
+    "id": "oh1igk1",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:27:33.552Z"
+  },
+  {
+    "id": "ph758gy",
+    "ip": "127.0.0.1",
+    "action": "EDIÇÃO",
+    "userId": "user-super",
+    "details": "Editou o usuário: Super Administrador",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:27:17.965Z"
+  },
+  {
+    "id": "94aqlp8",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T21:45:11.975Z"
+  },
+  {
+    "id": "piax5z8",
+    "ip": "127.0.0.1",
+    "action": "EDIÇÃO",
+    "userId": "user-super",
+    "details": "Atualizou o serviço: OS-2026-002",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:07:29.322Z"
+  },
+  {
+    "id": "dpygtdu",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:05:14.408Z"
+  },
+  {
+    "id": "x68b0uo",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T22:22:56.117Z"
+  },
+  {
+    "id": "2qbd8xd",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:14:45.257Z"
+  },
+  {
+    "id": "2tibvto",
+    "ip": "127.0.0.1",
+    "action": "CADASTRO",
+    "userId": "user-super",
+    "details": "Cadastrou o cliente: Reginaldo Veiga",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-22T23:00:05.544Z"
+  },
+  {
+    "id": "px1lken",
+    "ip": "127.0.0.1",
+    "action": "LOGIN",
+    "userId": "user-super",
+    "details": "Efetuou login no sistema com sucesso",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-24T21:56:16.504Z"
+  },
+  {
+    "id": "9v0nssd",
+    "ip": "127.0.0.1",
+    "action": "EDIÇÃO",
+    "userId": "user-super",
+    "details": "Atualizou o serviço: OS-2026-007",
+    "userName": "Super Administrador",
+    "timestamp": "2026-07-23T00:41:23.063Z"
   }
 ]

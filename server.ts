@@ -1,8 +1,4 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
+import 'dotenv/config'; // MUST be first — loads .env before anything else
 import express from 'express';
 import path from 'path';
 import fs from 'fs/promises';
@@ -10,8 +6,7 @@ import { existsSync, mkdirSync } from 'fs';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { createServer as createViteServer } from 'vite';
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, doc, getDocs, setDoc, deleteDoc } from 'firebase/firestore';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // Extend Express Request type globally
 declare global {
@@ -59,87 +54,114 @@ if (!existsSync(DATA_DIR)) {
   mkdirSync(DATA_DIR, { recursive: true });
 }
 
-// Firebase Firestore Integration Configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyCrPHSMGo7nW0PojD0ukXrcM9Q69j3BYkc",
-  authDomain: "inforservice-48339.firebaseapp.com",
-  projectId: "inforservice-48339",
-  storageBucket: "inforservice-48339.firebasestorage.app",
-  messagingSenderId: "266586701113",
-  appId: "1:266586701113:web:c43a12de7b9163de4ffce8"
-};
+// --- SUPABASE CLIENT (lazy — only created when USE_LOCAL_DB is false) ---
+let _supabase: SupabaseClient | null = null;
+function getSupabase(): SupabaseClient {
+  if (!_supabase) {
+    const url = process.env.SUPABASE_URL || '';
+    const key = process.env.SUPABASE_SERVICE_KEY || '';
+    if (!url || !key) throw new Error('SUPABASE_URL and SUPABASE_SERVICE_KEY must be set in .env');
+    _supabase = createClient(url, key);
+  }
+  return _supabase;
+}
 
-const firebaseApp = initializeApp(firebaseConfig);
-const db = getFirestore(firebaseApp);
-
-// Simple Database Helper with Firestore Live Sync & Local Fallback/Backups
-class FileDB {
-  private static async getFile<T extends { id: string }>(filename: string, defaultValue: T[] = []): Promise<T[]> {
+// Create all required tables if they don't exist yet (runs once on startup)
+async function ensureTables() {
+  const tables = ['users', 'companies', 'clients', 'services', 'payments', 'audit', 'receipts', 'notifications'];
+  for (const table of tables) {
     try {
-      const colRef = collection(db, filename);
-      const snapshot = await getDocs(colRef);
-      if (snapshot.empty) {
-        // If empty, try reading from the local backup JSON file if it exists
-        const filePath = path.join(DATA_DIR, `${filename}.json`);
-        if (existsSync(filePath)) {
-          const data = await fs.readFile(filePath, 'utf-8');
-          try {
-            const localData = JSON.parse(data) as T[];
-            if (localData && localData.length > 0) {
-              console.log(`Migrating local ${filename} file data to Firestore...`);
-              await this.saveFile(filename, localData);
-              return localData;
-            }
-          } catch (e) {
-            console.error(`Error parsing local JSON for ${filename}:`, e);
-          }
-        }
-        return defaultValue;
+      const { error } = await getSupabase().rpc('create_collection_table', { table_name: table }).single();
+      if (error && !error.message.includes('already exists') && !error.message.includes('does not exist')) {
+        // RPC may not exist, try direct SQL via REST
+        console.log(`Table setup for '${table}': ${error.message}`);
       }
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as T);
-    } catch (error) {
-      console.error(`Firestore error on getFile for ${filename}:`, error);
-      // Fallback to local files if firestore fails
-      const filePath = path.join(DATA_DIR, `${filename}.json`);
+    } catch (_e) {
+      // Ignore — table creation is best-effort; manual SQL creation also works
+    }
+  }
+}
+
+// Database Helper with Supabase + Local JSON fallback
+class FileDB {
+  private static async getFile<T extends { id: string }>(tableName: string, defaultValue: T[] = []): Promise<T[]> {
+    const useLocal = process.env.USE_LOCAL_DB === 'true';
+    if (useLocal) {
+      const filePath = path.join(DATA_DIR, `${tableName}.json`);
       if (existsSync(filePath)) {
         const data = await fs.readFile(filePath, 'utf-8');
         try { return JSON.parse(data); } catch { return defaultValue; }
       }
       return defaultValue;
     }
+
+    try {
+      const { data, error } = await getSupabase().from(tableName).select('id, data');
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        // If Supabase is empty, migrate from local JSON backup if exists
+        const filePath = path.join(DATA_DIR, `${tableName}.json`);
+        if (existsSync(filePath)) {
+          const raw = await fs.readFile(filePath, 'utf-8');
+          try {
+            const localData = JSON.parse(raw) as T[];
+            if (localData && localData.length > 0) {
+              console.log(`Migrating local '${tableName}' JSON to Supabase...`);
+              await this.saveFile(tableName, localData);
+              return localData;
+            }
+          } catch (e) {
+            console.error(`Error parsing local JSON for ${tableName}:`, e);
+          }
+        }
+        return defaultValue;
+      }
+      // Reconstruct each record: merge {id} + {data fields}
+      return data.map(row => ({ id: row.id, ...row.data }) as T);
+    } catch (error) {
+      console.error(`Supabase error on getFile for ${tableName}:`, error);
+      // Fallback to local JSON backup
+      const filePath = path.join(DATA_DIR, `${tableName}.json`);
+      if (existsSync(filePath)) {
+        const raw = await fs.readFile(filePath, 'utf-8');
+        try { return JSON.parse(raw); } catch { return defaultValue; }
+      }
+      return defaultValue;
+    }
   }
 
-  private static async saveFile<T extends { id: string }>(filename: string, data: T[]): Promise<void> {
-    try {
-      // Also write locally as a persistent local backup, so we have secondary resilience
-      const filePath = path.join(DATA_DIR, `${filename}.json`);
-      await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
+  private static async saveFile<T extends { id: string }>(tableName: string, data: T[]): Promise<void> {
+    // Always write a local JSON backup first
+    const filePath = path.join(DATA_DIR, `${tableName}.json`);
+    await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
 
-      // Get all existing document IDs in Firestore
-      const colRef = collection(db, filename);
-      const snapshot = await getDocs(colRef);
-      const existingIds = snapshot.docs.map(doc => doc.id);
+    const useLocal = process.env.USE_LOCAL_DB === 'true';
+    if (useLocal) return;
+
+    try {
+      // Fetch existing IDs from Supabase
+      const { data: existingRows, error: fetchError } = await getSupabase().from(tableName).select('id');
+      if (fetchError) throw fetchError;
+
+      const existingIds = new Set((existingRows || []).map((r: any) => r.id));
       const newIds = new Set(data.map(item => item.id));
 
-      // 1. Delete documents that are no longer in data in parallel
-      const deletePromises = existingIds
-        .filter(docId => !newIds.has(docId))
-        .map(docId => deleteDoc(doc(db, filename, docId)));
-      await Promise.all(deletePromises);
+      // Delete rows no longer in data
+      const toDelete = [...existingIds].filter(id => !newIds.has(id));
+      if (toDelete.length > 0) {
+        const { error: delError } = await getSupabase().from(tableName).delete().in('id', toDelete);
+        if (delError) console.error(`Supabase delete error for ${tableName}:`, delError);
+      }
 
-      // 2. Add or update current documents in Firestore in parallel
-      const writePromises = data.map(async (item) => {
-        const cleanedItem = JSON.parse(JSON.stringify(item));
-        const docId = cleanedItem.id || Math.random().toString(36).substring(2, 9);
-        delete cleanedItem.id; // Keep it clean
-        await setDoc(doc(db, filename, docId), cleanedItem);
+      // Upsert all current records
+      const rows = data.map(item => {
+        const { id, ...rest } = item as any;
+        return { id, data: rest };
       });
-      await Promise.all(writePromises);
+      const { error: upsertError } = await getSupabase().from(tableName).upsert(rows, { onConflict: 'id' });
+      if (upsertError) throw upsertError;
     } catch (error) {
-      console.error(`Firestore error on saveFile for ${filename}:`, error);
-      // Fallback: write locally anyway
-      const filePath = path.join(DATA_DIR, `${filename}.json`);
-      await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
+      console.error(`Supabase error on saveFile for ${tableName}:`, error);
     }
   }
 
@@ -213,10 +235,27 @@ async function triggerSystemNotification(title: string, message: string, type: '
 
 // Initialize and Seed Database
 async function initDB() {
+  const isEnvProduction = process.env.IS_PRODUCTION === 'true' || process.env.NODE_ENV === 'production';
+
+  // Ensure Supabase tables exist (no-op if already created)
+  if (process.env.USE_LOCAL_DB !== 'true') {
+    await ensureTables();
+  }
+
+  // Manual reset of demo data if configured via env
+  if (process.env.CLEAR_DEMO_DATA === 'true') {
+    console.log('CLEAR_DEMO_DATA is true. Clearing demo data collections...');
+    await FileDB.saveClients([]);
+    await FileDB.saveServices([]);
+    await FileDB.savePayments([]);
+    await FileDB.saveNotifications([]);
+    await FileDB.saveReceipts([]);
+  }
+
   // Seed Companies
   const companies = await FileDB.getCompanies();
   let defaultCompanyId = 'comp-1';
-  let isProduction = false;
+  let isProduction = isEnvProduction;
   if (companies.length === 0) {
     const defaultCompany = {
       id: 'comp-1',
@@ -233,17 +272,39 @@ async function initDB() {
       interest: 1.0, // 1% juros/mês
       penalty: 2.0, // 2% multa
       defaultDiscount: 0.0,
-      isProduction: false
+      isProduction: isEnvProduction
     };
     await FileDB.saveCompanies([defaultCompany]);
     console.log('Seeded default company');
   } else {
     defaultCompanyId = companies[0].id;
-    isProduction = companies[0].isProduction || false;
+    isProduction = companies[0].isProduction || isEnvProduction;
+    if (process.env.CLEAR_DEMO_DATA === 'true') {
+      companies[0].isProduction = true;
+      await FileDB.saveCompanies(companies);
+    }
   }
 
   // Seed Users
-  const users = await FileDB.getUsers();
+  let users = await FileDB.getUsers();
+
+  if (process.env.RESET_PASSWORDS === 'true' && users.length > 0) {
+    console.log('RESET_PASSWORDS is true. Resetting passwords for seeded users to admin123/user123...');
+    const superAdminPassword = await bcrypt.hash('admin123', 10);
+    const adminPassword = await bcrypt.hash('admin123', 10);
+    const userPassword = await bcrypt.hash('user123', 10);
+
+    users.forEach(u => {
+      if (u.email === 'superadmin@admin.com') u.passwordHash = superAdminPassword;
+      if (u.email === 'admin@admin.com') u.passwordHash = adminPassword;
+      if (u.email === 'user@user.com') u.passwordHash = userPassword;
+    });
+    await FileDB.saveUsers(users);
+  }
+
+  // Save local copy of users database to inspect current users
+  await fs.writeFile(path.join(DATA_DIR, 'users.json'), JSON.stringify(users, null, 2), 'utf-8');
+
   if (users.length === 0) {
     const superAdminPassword = await bcrypt.hash('admin123', 10);
     const adminPassword = await bcrypt.hash('admin123', 10);
@@ -280,8 +341,8 @@ async function initDB() {
   }
 
   // Seed initial Clients if empty to provide rich dashboard visuals immediately (only in demo/non-production mode)
-  if (isProduction) {
-    console.log('Database running in Production mode. Skipping demonstration seeding of clients, services, and payments.');
+  if (isProduction || process.env.CLEAR_DEMO_DATA === 'true') {
+    console.log('Database running in Production/Clean mode. Skipping demonstration seeding of clients, services, and payments.');
     return;
   }
 
@@ -528,7 +589,11 @@ async function initDB() {
 
 // Start Server Wrapper
 async function startServer() {
-  await initDB();
+  try {
+    await initDB();
+  } catch (err) {
+    console.error('Warning: initDB() failed on startup, continuing anyway:', err);
+  }
 
   const app = express();
   app.use(express.json({ limit: '50mb' })); // support base64 uploads
@@ -742,8 +807,8 @@ async function startServer() {
   app.post('/api/clients', authenticateToken, async (req, res) => {
     try {
       const clientData = req.body;
-      if (!clientData.name || !clientData.cpfCnpj) {
-        res.status(400).json({ message: 'Nome e CPF/CNPJ são obrigatórios' });
+      if (!clientData.name) {
+        res.status(400).json({ message: 'Nome é obrigatório' });
         return;
       }
 
@@ -846,18 +911,27 @@ async function startServer() {
   app.post('/api/services', authenticateToken, async (req, res) => {
     try {
       const serviceData = req.body;
-      if (!serviceData.clientId || !serviceData.serviceValue) {
-        res.status(400).json({ message: 'Cliente e Valor do Serviço são obrigatórios' });
+      if (!serviceData.serviceType) {
+        res.status(400).json({ message: 'Título do Serviço/Agendamento é obrigatório' });
         return;
       }
 
       const services = await FileDB.getServices();
       const serviceNumber = `OS-${new Date().getFullYear()}-${String(services.length + 1).padStart(3, '0')}`;
 
+      const serviceVal = Number(serviceData.serviceValue || 0);
+      const disc = Number(serviceData.discount || 0);
+      const add = Number(serviceData.additions || 0);
+      const finalVal = serviceVal - disc + add;
+
       const newService = {
         ...serviceData,
         id: 'srv-' + Math.random().toString(36).substring(2, 9),
         serviceNumber,
+        serviceValue: serviceVal,
+        discount: disc,
+        additions: add,
+        finalValue: finalVal,
         companyId: req.user.companyId,
         userId: req.user.id,
         createdAt: new Date().toISOString()
@@ -866,7 +940,32 @@ async function startServer() {
       services.push(newService);
       await FileDB.saveServices(services);
 
-      await addAuditLog(req.user.id, req.user.name, 'CADASTRO', `Criou serviço/OS: ${serviceNumber}`, req);
+      // Automatically generate a single payment installment (Conta a Receber) for the new service
+      const payments = await FileDB.getPayments();
+      const isPaid = newService.status === ServiceStatus.PAGO;
+      const newPayment = {
+        id: 'pay-' + Math.random().toString(36).substring(2, 9),
+        serviceId: newService.id,
+        clientId: newService.clientId,
+        amount: finalVal,
+        dueDate: newService.expectedDate || newService.requestDate || new Date().toISOString().split('T')[0],
+        paymentDate: isPaid ? (newService.completionDate || new Date().toISOString().split('T')[0]) : undefined,
+        paidAmount: isPaid ? finalVal : 0,
+        interest: 0,
+        penalty: 0,
+        discount: disc,
+        paymentMethod: serviceData.paymentMethod || 'Pix',
+        observation: `Gerado automaticamente a partir da OS ${serviceNumber}`,
+        installmentNumber: 1,
+        totalInstallments: 1,
+        status: isPaid ? PaymentStatus.PAGO : PaymentStatus.PENDENTE,
+        companyId: req.user.companyId,
+        createdAt: new Date().toISOString()
+      };
+      payments.push(newPayment);
+      await FileDB.savePayments(payments);
+
+      await addAuditLog(req.user.id, req.user.name, 'CADASTRO', `Criou serviço/OS: ${serviceNumber} e gerou parcela financeira`, req);
 
       // Auto trigger system notification
       const clients = await FileDB.getClients();
@@ -974,6 +1073,104 @@ async function startServer() {
       res.json(filtered);
     } catch (error) {
       res.status(500).json({ message: 'Erro ao carregar pagamentos' });
+    }
+  });
+
+  // Bulk / Cascade Receive Payment Endpoint — MUST be before generic POST /api/payments
+  app.post('/api/payments/bulk-receive', authenticateToken, requireRole([UserRole.SUPER_ADMIN, UserRole.ADMIN]), async (req, res) => {
+    try {
+      const { clientId, amount, paymentDate, paymentMethod } = req.body;
+      const numericAmount = parseFloat(amount);
+
+      if (!clientId || isNaN(numericAmount) || numericAmount <= 0) {
+        res.status(400).json({ message: 'Cliente e valor válido são obrigatórios' });
+        return;
+      }
+
+      const payments = await FileDB.getPayments();
+      const clientPayments = payments.filter(p =>
+        p.clientId === clientId &&
+        p.companyId === req.user.companyId &&
+        p.status !== PaymentStatus.PAGO &&
+        (p.status as any) !== 'Pago' &&
+        (p.status as any) !== 'Cancelado'
+      );
+
+      if (clientPayments.length === 0) {
+        res.status(400).json({ message: 'Nenhuma parcela em aberto encontrada para este cliente' });
+        return;
+      }
+
+      // Sort oldest first by dueDate, then installmentNumber, then createdAt/id
+      clientPayments.sort((a, b) => {
+        const timeA = new Date(a.dueDate).getTime();
+        const timeB = new Date(b.dueDate).getTime();
+        if (timeA !== timeB) return timeA - timeB;
+        const instA = a.installmentNumber || 0;
+        const instB = b.installmentNumber || 0;
+        if (instA !== instB) return instA - instB;
+        return (a.createdAt || a.id).localeCompare(b.createdAt || b.id);
+      });
+
+      let remaining = numericAmount;
+      let invoicesPaid = 0;
+      let hadPartial = false;
+      const dateStr = paymentDate || new Date().toISOString().split('T')[0];
+      const methodStr = paymentMethod || 'Pix';
+
+      for (const inv of clientPayments) {
+        if (remaining <= 0) break;
+
+        const targetIndex = payments.findIndex(p => p.id === inv.id);
+        if (targetIndex === -1) continue;
+
+        const alreadyPaid = inv.paidAmount || 0;
+        const due = Math.max(0, inv.amount - alreadyPaid);
+        if (due <= 0) continue;
+
+        if (remaining >= due) {
+          // Full payment of this invoice
+          payments[targetIndex] = {
+            ...payments[targetIndex],
+            status: PaymentStatus.PAGO,
+            paidAmount: inv.amount,
+            paymentDate: dateStr,
+            paymentMethod: methodStr
+          };
+          remaining = parseFloat((remaining - due).toFixed(2));
+          invoicesPaid++;
+        } else {
+          // Partial payment of this invoice
+          payments[targetIndex] = {
+            ...payments[targetIndex],
+            status: PaymentStatus.PARCIAL,
+            paidAmount: parseFloat((alreadyPaid + remaining).toFixed(2)),
+            paymentDate: dateStr,
+            paymentMethod: methodStr
+          };
+          hadPartial = true;
+          remaining = 0;
+          invoicesPaid++;
+        }
+      }
+
+      await FileDB.savePayments(payments);
+
+      const clients = await FileDB.getClients();
+      const client = clients.find(c => c.id === clientId);
+      const clientName = client ? client.name : 'Cliente';
+
+      await addAuditLog(req.user.id, req.user.name, 'EDIÇÃO', `Recebeu R$ ${numericAmount.toFixed(2)} de ${clientName}. ${invoicesPaid} parcela(s) atualizada(s).`, req);
+
+      res.json({
+        success: true,
+        invoicesPaid,
+        hadPartial,
+        remaining
+      });
+    } catch (error: any) {
+      console.error('Error in bulk-receive endpoint:', error);
+      res.status(500).json({ message: 'Erro ao registrar recebimento em lote', error: error.message });
     }
   });
 
@@ -1277,6 +1474,23 @@ async function startServer() {
       res.json(companies[index]);
     } catch (error) {
       res.status(500).json({ message: 'Erro ao atualizar configurações' });
+    }
+  });
+
+  // Database Connection Status Endpoint
+  app.get('/api/db/status', authenticateToken, async (req, res) => {
+    try {
+      const useLocal = process.env.USE_LOCAL_DB === 'true';
+      if (useLocal) {
+        res.json({ connected: true, type: 'local', message: 'Operando localmente (/data)' });
+        return;
+      }
+
+      // Test reading companies to verify firestore connection
+      await FileDB.getCompanies();
+      res.json({ connected: true, type: 'firebase', message: 'Conectado ao Firebase Firestore' });
+    } catch (error: any) {
+      res.json({ connected: false, type: 'firebase_error', message: `Erro Firebase: ${error.message}` });
     }
   });
 

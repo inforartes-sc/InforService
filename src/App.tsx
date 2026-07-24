@@ -93,8 +93,12 @@ export default function App() {
       setPayments(paymentsList);
       setCompany(companyConfig);
       setNotifications(notificationsList);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching application data:', err);
+      if (err.message && (err.message.includes('Sessão expirada') || err.message.includes('não autorizada') || err.message.includes('Não autenticado') || err.message.includes('Token'))) {
+        removeToken();
+        setCurrentUser(null);
+      }
     }
   };
 
@@ -112,6 +116,9 @@ export default function App() {
   const handleLoginSuccess = (user: User) => {
     setCurrentUser(user);
     setActiveTab('dashboard');
+    if (window.location.pathname === '/login') {
+      window.history.pushState({}, '', '/');
+    }
   };
 
   const handleLogout = () => {
@@ -357,6 +364,8 @@ export default function App() {
                 <Clients 
                   clients={clients} 
                   services={services} 
+                  payments={payments}
+                  company={company}
                   onRefresh={fetchAllData} 
                   currentUser={currentUser}
                 />
@@ -375,6 +384,7 @@ export default function App() {
                   payments={payments} 
                   clients={clients} 
                   services={services} 
+                  company={company}
                   onRefresh={fetchAllData} 
                   currentUser={currentUser}
                 />
@@ -383,6 +393,7 @@ export default function App() {
                 <Calendar 
                   services={services} 
                   clients={clients} 
+                  onRefresh={fetchAllData}
                 />
               )}
               {activeTab === 'reports' && (

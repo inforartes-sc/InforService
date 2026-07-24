@@ -49,17 +49,29 @@ async function apiFetch(endpoint: string, options: RequestInit = {}): Promise<an
     headers
   });
 
-  if (response.status === 401) {
+  if (response.status === 401 || response.status === 403) {
     removeToken();
-    if (window.location.pathname !== '/login') {
-      window.location.href = '/login';
-    }
-    throw new Error('Não autenticado. Por favor, faça login.');
+    const text = await response.text();
+    let msg = 'Sessão expirada. Por favor, faça login novamente.';
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed.message) msg = parsed.message;
+    } catch {}
+    throw new Error(msg);
   }
 
-  const data = await response.json();
+  const text = await response.text();
+  let data: any = {};
+  if (text && text.trim().length > 0) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { message: text };
+    }
+  }
+
   if (!response.ok) {
-    throw new Error(data.message || 'Ocorreu um erro na requisição');
+    throw new Error(data.message || `Erro na requisição (${response.status})`);
   }
 
   return data;
@@ -172,6 +184,18 @@ export const api = {
     });
   },
 
+  async bulkReceivePayments(data: {
+    clientId: string;
+    amount: number;
+    paymentDate: string;
+    paymentMethod: string;
+  }): Promise<{ success: boolean; invoicesPaid: number; hadPartial: boolean; remaining: number }> {
+    return apiFetch('/payments/bulk-receive', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
   async deletePayment(id: string): Promise<{ message: string }> {
     return apiFetch(`/payments/${id}`, {
       method: 'DELETE'
@@ -249,5 +273,9 @@ export const api = {
 
   async seedDemoData(): Promise<{ message: string }> {
     return apiFetch('/db/seed-demo', { method: 'POST' });
+  },
+
+  async getDbStatus(): Promise<{ connected: boolean; type: 'local' | 'firebase' | 'firebase_error'; message: string }> {
+    return apiFetch('/db/status');
   }
 };

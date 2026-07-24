@@ -150,59 +150,6 @@ export default function Login({ onLoginSuccess }: LoginProps) {
               </button>
             </div>
           </form>
-
-          {/* Test credentials panel */}
-          <div className="mt-8 border-t border-slate-100 pt-6">
-            <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider text-center mb-4">
-              Contas de Demonstração (Clique para preencher)
-            </h4>
-            <div className="grid grid-cols-1 gap-2.5">
-              <button
-                type="button"
-                onClick={() => handleDemoLogin('superadmin@admin.com')}
-                className="flex items-center justify-between px-3.5 py-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-left text-xs cursor-pointer transition-colors duration-150"
-              >
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-purple-600" />
-                  <div>
-                    <span className="font-semibold text-slate-700 block">Super Administrador</span>
-                    <span className="text-slate-500">superadmin@admin.com</span>
-                  </div>
-                </div>
-                <span className="text-slate-400 font-mono text-[10px]">admin123</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleDemoLogin('admin@admin.com')}
-                className="flex items-center justify-between px-3.5 py-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-left text-xs cursor-pointer transition-colors duration-150"
-              >
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-indigo-600" />
-                  <div>
-                    <span className="font-semibold text-slate-700 block">Administrador</span>
-                    <span className="text-slate-500">admin@admin.com</span>
-                  </div>
-                </div>
-                <span className="text-slate-400 font-mono text-[10px]">admin123</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleDemoLogin('user@user.com')}
-                className="flex items-center justify-between px-3.5 py-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-left text-xs cursor-pointer transition-colors duration-150"
-              >
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  <div>
-                    <span className="font-semibold text-slate-700 block">Usuário Operador</span>
-                    <span className="text-slate-500">user@user.com</span>
-                  </div>
-                </div>
-                <span className="text-slate-400 font-mono text-[10px]">user123</span>
-              </button>
-            </div>
-          </div>
         </div>
       </motion.div>
     </div>

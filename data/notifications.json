@@ -1,1 +1,186 @@
-[]
+[
+  {
+    "id": "kxx4u10",
+    "title": "Recebimento Confirmado",
+    "message": "Confirmado o recebimento da parcela 1/1 no valor de R$ 80.00 de West Envelopamento.",
+    "type": "system",
+    "status": "Enviado",
+    "createdAt": "2026-07-24T22:07:35.573Z"
+  },
+  {
+    "id": "1vlbhgj",
+    "type": "system",
+    "title": "Serviço Concluído",
+    "status": "Enviado",
+    "message": "O serviço OS-2026-008 foi marcado como Finalizado.",
+    "createdAt": "2026-07-23T00:42:03.616Z"
+  },
+  {
+    "id": "mozgwoy",
+    "type": "system",
+    "title": "Serviço Concluído",
+    "status": "Enviado",
+    "message": "O serviço OS-2026-007 foi marcado como Finalizado.",
+    "createdAt": "2026-07-23T00:41:23.268Z"
+  },
+  {
+    "id": "dia29oz",
+    "type": "system",
+    "title": "Novo Cliente Cadastrado",
+    "status": "Enviado",
+    "message": "O cliente West Envelopamento foi adicionado ao sistema.",
+    "createdAt": "2026-07-22T23:00:25.867Z"
+  },
+  {
+    "id": "im9voda",
+    "type": "system",
+    "title": "Serviço Concluído",
+    "status": "Enviado",
+    "message": "O serviço OS-2026-002 foi marcado como Finalizado.",
+    "createdAt": "2026-07-22T23:03:29.641Z"
+  },
+  {
+    "id": "p9rz4yt",
+    "type": "system",
+    "title": "Novo Cliente Cadastrado",
+    "status": "Enviado",
+    "message": "O cliente Ari Serigrafia foi adicionado ao sistema.",
+    "createdAt": "2026-07-22T23:00:55.096Z"
+  },
+  {
+    "id": "qk80vqb",
+    "type": "system",
+    "title": "Novo Serviço Registrado",
+    "status": "Enviado",
+    "message": "O serviço OS-2026-002 foi criado para o cliente Marinalva Morais.",
+    "createdAt": "2026-07-22T23:12:12.472Z"
+  },
+  {
+    "id": "nvqc9kg",
+    "type": "system",
+    "title": "Novo Serviço Registrado",
+    "status": "Enviado",
+    "message": "O serviço OS-2026-006 foi criado para o cliente Reginaldo Veiga.",
+    "createdAt": "2026-07-23T00:33:13.041Z"
+  },
+  {
+    "id": "exqq7rv",
+    "type": "system",
+    "title": "Novo Serviço Registrado",
+    "status": "Enviado",
+    "message": "O serviço OS-2026-005 foi criado para o cliente Marinalva Morais.",
+    "createdAt": "2026-07-23T00:23:43.223Z"
+  },
+  {
+    "id": "gu8ap22",
+    "type": "system",
+    "title": "Novo Serviço Registrado",
+    "status": "Enviado",
+    "message": "O serviço OS-2026-008 foi criado para o cliente West Envelopamento.",
+    "createdAt": "2026-07-23T00:40:46.544Z"
+  },
+  {
+    "id": "ycl8cv3",
+    "type": "system",
+    "title": "Novo Serviço Registrado",
+    "status": "Enviado",
+    "message": "O serviço OS-2026-007 foi criado para o cliente West Envelopamento.",
+    "createdAt": "2026-07-23T00:40:26.138Z"
+  },
+  {
+    "id": "ld24ov6",
+    "type": "system",
+    "title": "Novo Serviço Registrado",
+    "status": "Enviado",
+    "message": "O serviço OS-2026-004 foi criado para o cliente Marinalva Morais.",
+    "createdAt": "2026-07-23T00:22:41.455Z"
+  },
+  {
+    "id": "moqvssu",
+    "type": "system",
+    "title": "Novo Serviço Registrado",
+    "status": "Enviado",
+    "message": "O serviço OS-2026-003 foi criado para o cliente Marinalva Morais.",
+    "createdAt": "2026-07-22T23:12:51.715Z"
+  },
+  {
+    "id": "4jlxiwx",
+    "type": "system",
+    "title": "Novo Serviço Registrado",
+    "status": "Enviado",
+    "message": "O serviço OS-2026-001 foi criado para o cliente Marinalva Morais.",
+    "createdAt": "2026-07-22T22:57:36.414Z"
+  },
+  {
+    "id": "5bu0zm5",
+    "type": "system",
+    "title": "Novo Cliente Cadastrado",
+    "status": "Enviado",
+    "message": "O cliente Reginaldo Veiga foi adicionado ao sistema.",
+    "createdAt": "2026-07-22T23:00:05.814Z"
+  },
+  {
+    "id": "9nvne8g",
+    "type": "system",
+    "title": "Novo Cliente Cadastrado",
+    "status": "Enviado",
+    "message": "O cliente Marinalva Morais foi adicionado ao sistema.",
+    "createdAt": "2026-07-22T22:34:15.487Z"
+  },
+  {
+    "id": "lvz807j",
+    "type": "system",
+    "title": "Novo Serviço Registrado",
+    "status": "Enviado",
+    "message": "O serviço OS-2026-009 foi criado para o cliente West Envelopamento.",
+    "createdAt": "2026-07-23T00:41:08.747Z"
+  },
+  {
+    "id": "9q13ytm",
+    "type": "system",
+    "title": "Novo Serviço Registrado",
+    "status": "Enviado",
+    "message": "O serviço OS-2026-002 foi criado para o cliente Marinalva Morais.",
+    "createdAt": "2026-07-22T22:58:38.629Z"
+  },
+  {
+    "id": "az810ju",
+    "type": "system",
+    "title": "Recebimento Confirmado",
+    "status": "Enviado",
+    "message": "Confirmado o recebimento da parcela 1/1 no valor de R$ 80.00 de West Envelopamento.",
+    "createdAt": "2026-07-24T22:04:45.746Z"
+  },
+  {
+    "id": "52g0hhf",
+    "type": "system",
+    "title": "Recebimento Confirmado",
+    "status": "Enviado",
+    "message": "Confirmado o recebimento da parcela 1/1 no valor de R$ 80.00 de West Envelopamento.",
+    "createdAt": "2026-07-24T21:56:03.524Z"
+  },
+  {
+    "id": "m9jc747",
+    "type": "system",
+    "title": "Recebimento Confirmado",
+    "status": "Enviado",
+    "message": "Confirmado o recebimento da parcela 1/1 no valor de R$ 80.00 de West Envelopamento.",
+    "createdAt": "2026-07-24T21:49:00.183Z"
+  },
+  {
+    "id": "i054rr8",
+    "type": "system",
+    "title": "Serviço Concluído",
+    "status": "Enviado",
+    "message": "O serviço OS-2026-009 foi marcado como Finalizado.",
+    "createdAt": "2026-07-23T00:42:29.085Z"
+  },
+  {
+    "id": "lt40w9k",
+    "type": "system",
+    "title": "Novo Serviço Registrado",
+    "status": "Enviado",
+    "message": "O serviço OS-2026-003 foi criado para o cliente Reginaldo Veiga.",
+    "createdAt": "2026-07-22T23:09:07.781Z"
+  }
+]

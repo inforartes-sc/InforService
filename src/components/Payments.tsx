@@ -4,8 +4,9 @@
  */
 
 import React, { useState } from 'react';
-import { Payment, Client, Service, PaymentStatus, PaymentMethod } from '../types';
+import { Payment, Client, Service, Company, PaymentStatus, PaymentMethod } from '../types';
 import { api } from '../lib/api';
+import PaymentReceipt from './PaymentReceipt';
 import { 
   Plus, 
   Search, 
@@ -21,7 +22,8 @@ import {
   X, 
   MessageSquare, 
   User, 
-  FileCheck
+  FileCheck,
+  CreditCard
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -29,11 +31,12 @@ interface PaymentsProps {
   payments: Payment[];
   clients: Client[];
   services: Service[];
+  company: Company | null;
   onRefresh: () => void;
   currentUser: any;
 }
 
-export default function Payments({ payments, clients, services, onRefresh, currentUser }: PaymentsProps) {
+export default function Payments({ payments, clients, services, company, onRefresh, currentUser }: PaymentsProps) {
   // Filters state
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('Todos');
@@ -70,6 +73,213 @@ export default function Payments({ payments, clients, services, onRefresh, curre
   const [errorMsg, setErrorMsg] = useState('');
 
   const [showAdvancedPayments, setShowAdvancedPayments] = useState(false);
+
+  // ---- Bulk Client Payment Receipt ----
+  const [isBulkPayModalOpen, setIsBulkPayModalOpen] = useState(false);
+  const [bulkClientId, setBulkClientId] = useState<string>('');
+  const [bulkReceiveAmount, setBulkReceiveAmount] = useState('');
+  const [bulkPayMethod, setBulkPayMethod] = useState<PaymentMethod>(PaymentMethod.PIX);
+  const [bulkPayDate, setBulkPayDate] = useState(new Date().toISOString().split('T')[0]);
+  const [bulkSubmitting, setBulkSubmitting] = useState(false);
+  const [bulkError, setBulkError] = useState('');
+  const [bulkResult, setBulkResult] = useState<{paid: number; partial: boolean; remaining: number} | null>(null);
+
+  // Receipt state
+  const [receiptData, setReceiptData] = useState<null | {
+    receiptNumber: string;
+    paymentDate: string;
+    paymentMethod: string;
+    totalPaid: number;
+    client: Client;
+    lines: { serviceNumber: string; installmentNumber: number; totalInstallments: number; amount: number; paidAmount: number; status: PaymentStatus; dueDate: string; observation?: string }[];
+    remainingBalance: number;
+  }>(null);
+
+  // Get open payments for the selected bulk client, sorted oldest first (FIFO)
+  const targetClientId = bulkClientId || (selectedClient !== 'Todos' ? selectedClient : '');
+  const clientOpenPayments = targetClientId
+    ? payments
+        .filter(p =>
+          p.clientId === targetClientId &&
+          p.status !== PaymentStatus.PAGO &&
+          (p.status as any) !== 'Pago' &&
+          (p.status as any) !== 'Cancelado'
+        )
+        .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
+    : [];
+
+  const clientTotalDebt = clientOpenPayments.reduce((sum, p) => {
+    const alreadyPaid = p.paidAmount || 0;
+    return sum + Math.max(0, p.amount - alreadyPaid);
+  }, 0);
+
+  const handleBulkClientChange = (newClientId: string) => {
+    setBulkClientId(newClientId);
+    setBulkResult(null);
+    setBulkError('');
+    const openForClient = payments.filter(p =>
+      p.clientId === newClientId &&
+      p.status !== PaymentStatus.PAGO &&
+      (p.status as any) !== 'Pago' &&
+      (p.status as any) !== 'Cancelado'
+    );
+    const debt = openForClient.reduce((sum, p) => sum + Math.max(0, p.amount - (p.paidAmount || 0)), 0);
+    setBulkReceiveAmount(debt > 0 ? debt.toFixed(2) : '');
+  };
+
+  const processCascadePayment = async (
+    clientId: string,
+    amountToApply: number,
+    payDate: string,
+    payMethod: PaymentMethod
+  ) => {
+    try {
+      const res = await api.bulkReceivePayments({
+        clientId,
+        amount: amountToApply,
+        paymentDate: payDate,
+        paymentMethod: payMethod
+      });
+      return { invoicesPaid: res.invoicesPaid, hadPartial: res.hadPartial, remaining: res.remaining };
+    } catch (err) {
+      console.warn('Backend bulk-receive failed or endpoint pending restart, using fallback cascade:', err);
+
+      // Fallback: client-side FIFO cascade logic
+      const openInstallments = payments
+        .filter(p =>
+          p.clientId === clientId &&
+          p.status !== PaymentStatus.PAGO &&
+          (p.status as any) !== 'Pago' &&
+          (p.status as any) !== 'Cancelado'
+        )
+        .sort((a, b) => {
+          const timeA = new Date(a.dueDate).getTime();
+          const timeB = new Date(b.dueDate).getTime();
+          if (timeA !== timeB) return timeA - timeB;
+          const instA = a.installmentNumber || 0;
+          const instB = b.installmentNumber || 0;
+          if (instA !== instB) return instA - instB;
+          return (a.createdAt || a.id).localeCompare(b.createdAt || b.id);
+        });
+
+      let remaining = amountToApply;
+      let invoicesPaid = 0;
+      let hadPartial = false;
+
+      for (const inv of openInstallments) {
+        if (remaining <= 0) break;
+        const alreadyPaid = inv.paidAmount || 0;
+        const due = Math.max(0, inv.amount - alreadyPaid);
+        if (due <= 0) continue;
+
+        if (remaining >= due) {
+          await api.updatePayment(inv.id, {
+            status: PaymentStatus.PAGO,
+            paidAmount: inv.amount,
+            paymentDate: payDate,
+            paymentMethod: payMethod
+          });
+          remaining = parseFloat((remaining - due).toFixed(2));
+          invoicesPaid++;
+        } else {
+          await api.updatePayment(inv.id, {
+            status: PaymentStatus.PARCIAL,
+            paidAmount: parseFloat((alreadyPaid + remaining).toFixed(2)),
+            paymentDate: payDate,
+            paymentMethod: payMethod
+          });
+          hadPartial = true;
+          remaining = 0;
+          invoicesPaid++;
+        }
+      }
+
+      return { invoicesPaid, hadPartial, remaining };
+    }
+  };
+
+  const handleBulkReceive = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const received = parseFloat(bulkReceiveAmount);
+    if (!received || received <= 0) {
+      setBulkError('Informe um valor maior que zero.');
+      return;
+    }
+    if (clientOpenPayments.length === 0) {
+      setBulkError('Nenhuma parcela em aberto para o cliente selecionado.');
+      return;
+    }
+
+    setBulkSubmitting(true);
+    setBulkError('');
+    setBulkResult(null);
+
+    try {
+      const res = await processCascadePayment(targetClientId, received, bulkPayDate, bulkPayMethod);
+      setBulkResult({ paid: res.invoicesPaid, partial: res.hadPartial, remaining: res.remaining });
+      onRefresh();
+
+      // Build receipt data
+      const clientObj = clients.find(c => c.id === targetClientId);
+      if (clientObj) {
+        // Collect the open invoices that were processed (oldest first)
+        const processed = clientOpenPayments
+          .slice(0, res.invoicesPaid)
+          .map(p => {
+            const svc = services.find(s => s.id === p.serviceId);
+            const wasFull = res.invoicesPaid > 0 && (p.amount - (p.paidAmount || 0)) <= received;
+            return {
+              serviceNumber: svc?.serviceNumber || p.serviceId,
+              installmentNumber: p.installmentNumber || 1,
+              totalInstallments: p.totalInstallments || 1,
+              amount: p.amount,
+              paidAmount: wasFull ? p.amount : parseFloat((p.paidAmount || 0).toFixed(2)),
+              status: wasFull ? PaymentStatus.PAGO : PaymentStatus.PARCIAL,
+              dueDate: p.dueDate,
+              observation: p.observation,
+            };
+          });
+        const rNum = 'REC-' + Date.now().toString(36).toUpperCase();
+        setReceiptData({
+          receiptNumber: rNum,
+          paymentDate: bulkPayDate,
+          paymentMethod: bulkPayMethod,
+          totalPaid: received,
+          client: clientObj,
+          lines: processed,
+          remainingBalance: res.remaining,
+        });
+        setIsBulkPayModalOpen(false);
+      }
+    } catch (err: any) {
+      setBulkError(err.message || 'Erro ao registrar recebimento.');
+    } finally {
+      setBulkSubmitting(false);
+    }
+  };
+
+  const openBulkPayModal = () => {
+    const initialClient = selectedClient !== 'Todos'
+      ? selectedClient
+      : (clients.find(c => payments.some(p => p.clientId === c.id && p.status !== PaymentStatus.PAGO && (p.status as any) !== 'Pago' && (p.status as any) !== 'Cancelado'))?.id || clients[0]?.id || '');
+    
+    setBulkClientId(initialClient);
+
+    const openForClient = payments.filter(p =>
+      p.clientId === initialClient &&
+      p.status !== PaymentStatus.PAGO &&
+      (p.status as any) !== 'Pago' &&
+      (p.status as any) !== 'Cancelado'
+    );
+    const debt = openForClient.reduce((sum, p) => sum + Math.max(0, p.amount - (p.paidAmount || 0)), 0);
+
+    setBulkReceiveAmount(debt > 0 ? debt.toFixed(2) : '');
+    setBulkPayMethod(PaymentMethod.PIX);
+    setBulkPayDate(new Date().toISOString().split('T')[0]);
+    setBulkError('');
+    setBulkResult(null);
+    setIsBulkPayModalOpen(true);
+  };
 
   // Set default edit fields
   const openEditModal = (p: Payment) => {
@@ -150,22 +360,40 @@ export default function Payments({ payments, clients, services, onRefresh, curre
 
     setSubmitting(true);
     try {
-      const alreadyPaid = confirmingPayment.paidAmount || 0;
-      const totalPaid = parseFloat((alreadyPaid + quickPaidAmount).toFixed(2));
-      
-      let finalStatus = PaymentStatus.PAGO;
-      if (totalPaid < confirmingPayment.amount) {
-        finalStatus = PaymentStatus.PARCIAL;
-      }
-
-      await api.updatePayment(confirmingPayment.id, {
-        status: finalStatus,
-        paidAmount: totalPaid,
-        paymentMethod: quickPaymentMethod,
-        paymentDate: quickPaymentDate
-      });
+      const res = await processCascadePayment(
+        confirmingPayment.clientId,
+        quickPaidAmount,
+        quickPaymentDate,
+        quickPaymentMethod
+      );
       setIsConfirmModalOpen(false);
       onRefresh();
+
+      // Build receipt for quick pay
+      const clientObj = clients.find(c => c.id === confirmingPayment.clientId);
+      const svc = services.find(s => s.id === confirmingPayment.serviceId);
+      if (clientObj && res) {
+        const isFull = quickPaidAmount >= (confirmingPayment.amount - (confirmingPayment.paidAmount || 0));
+        const rNum = 'REC-' + Date.now().toString(36).toUpperCase();
+        setReceiptData({
+          receiptNumber: rNum,
+          paymentDate: quickPaymentDate,
+          paymentMethod: quickPaymentMethod,
+          totalPaid: quickPaidAmount,
+          client: clientObj,
+          lines: [{
+            serviceNumber: svc?.serviceNumber || confirmingPayment.serviceId,
+            installmentNumber: confirmingPayment.installmentNumber || 1,
+            totalInstallments: confirmingPayment.totalInstallments || 1,
+            amount: confirmingPayment.amount,
+            paidAmount: quickPaidAmount,
+            status: isFull ? PaymentStatus.PAGO : PaymentStatus.PARCIAL,
+            dueDate: confirmingPayment.dueDate,
+            observation: confirmingPayment.observation,
+          }],
+          remainingBalance: res.remaining || 0,
+        });
+      }
     } catch (err) {
       console.error('Error confirming pay:', err);
     } finally {
@@ -234,6 +462,13 @@ export default function Payments({ payments, clients, services, onRefresh, curre
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight font-sans">Contas a Receber</h1>
           <p className="text-sm text-slate-500 mt-1">Monitore parcelamentos, confirme recebimentos e gerencie o fluxo de caixa.</p>
         </div>
+        <button
+          onClick={openBulkPayModal}
+          className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-md cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98]"
+        >
+          <CreditCard className="w-4 h-4" />
+          Receber Pagamento
+        </button>
       </div>
 
       {/* Advanced Filters Panel */}
@@ -758,6 +993,254 @@ export default function Payments({ payments, clients, services, onRefresh, curre
             </form>
           </motion.div>
         </div>
+      )}
+
+      {/* BULK CLIENT PAYMENT RECEIPT MODAL */}
+      {isBulkPayModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col font-sans"
+          >
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-emerald-50/50">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-emerald-100 text-emerald-700 rounded-xl">
+                  <CreditCard className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 font-sans">
+                    Receber Pagamento de Cliente
+                  </h3>
+                  <p className="text-xs text-slate-500">Quitação total ou parcial de parcelas em aberto</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsBulkPayModalOpen(false)}
+                className="p-1.5 hover:bg-slate-200/60 rounded-xl text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-5 overflow-y-auto flex-1">
+              {bulkError && (
+                <div className="bg-rose-50 border-l-4 border-rose-500 p-3.5 rounded-lg text-xs text-rose-700 font-medium">
+                  {bulkError}
+                </div>
+              )}
+
+              {bulkResult ? (
+                <div className="bg-emerald-50 border border-emerald-200 p-5 rounded-2xl text-center space-y-3">
+                  <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+                    <CheckCircle className="w-7 h-7" />
+                  </div>
+                  <div>
+                    <h4 className="text-base font-bold text-emerald-900">Recebimento Registrado com Sucesso!</h4>
+                    <p className="text-xs text-emerald-700 mt-1">
+                      {bulkResult.paid} parcela(s) atualizada(s) no sistema.
+                    </p>
+                    {bulkResult.remaining > 0 && (
+                      <p className="text-xs font-semibold text-amber-700 mt-2 bg-amber-50 p-2 rounded-lg border border-amber-200">
+                        Obs: Sobrou um saldo restante de R$ {bulkResult.remaining.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} pois o valor informado superava a dívida total do cliente.
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsBulkPayModalOpen(false)}
+                    className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md cursor-pointer transition-colors"
+                  >
+                    Concluir
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleBulkReceive} className="space-y-4">
+                  {/* Select Client */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Selecione o Cliente *
+                    </label>
+                    <select
+                      value={bulkClientId}
+                      onChange={(e) => handleBulkClientChange(e.target.value)}
+                      className="block w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white text-slate-800 font-medium"
+                    >
+                      <option value="">-- Selecione um cliente --</option>
+                      {clients.map(c => {
+                        const openCount = payments.filter(p =>
+                          p.clientId === c.id &&
+                          p.status !== PaymentStatus.PAGO &&
+                          (p.status as any) !== 'Pago' &&
+                          (p.status as any) !== 'Cancelado'
+                        ).length;
+                        const totalDebt = payments
+                          .filter(p =>
+                            p.clientId === c.id &&
+                            p.status !== PaymentStatus.PAGO &&
+                            (p.status as any) !== 'Pago' &&
+                            (p.status as any) !== 'Cancelado'
+                          )
+                          .reduce((sum, p) => sum + Math.max(0, p.amount - (p.paidAmount || 0)), 0);
+                        return (
+                          <option key={c.id} value={c.id}>
+                            {c.name} {openCount > 0 ? `(${openCount} parcela(s) em aberto - R$ ${totalDebt.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})` : '(Sem pendências)'}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+
+                  {/* Client Summary Box */}
+                  {bulkClientId && (
+                    <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 space-y-3">
+                      <div className="flex justify-between items-center pb-2 border-b border-slate-200/60">
+                        <span className="text-xs text-slate-500 font-medium">Saldo Total Devedor:</span>
+                        <span className="text-sm font-extrabold text-emerald-700 font-mono">
+                          R$ {clientTotalDebt.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+
+                      {clientOpenPayments.length === 0 ? (
+                        <p className="text-xs text-slate-400 italic text-center py-2">
+                          Este cliente não possui parcelas pendentes no momento.
+                        </p>
+                      ) : (
+                        <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            Parcelas Pendentes ({clientOpenPayments.length}):
+                          </span>
+                          {clientOpenPayments.map((p, idx) => {
+                            const service = services.find(s => s.id === p.serviceId);
+                            const remaining = p.amount - (p.paidAmount || 0);
+                            return (
+                              <div key={p.id} className="flex justify-between items-center bg-white p-2 rounded-lg border border-slate-100 text-xs">
+                                <div>
+                                  <span className="font-semibold text-slate-700">#{idx + 1} - {service ? service.serviceNumber : 'Parcela'}</span>
+                                  <span className="text-[10px] text-slate-400 ml-2">Venc: {p.dueDate ? new Date(p.dueDate).toLocaleDateString('pt-BR') : '-'}</span>
+                                </div>
+                                <span className="font-bold text-slate-800 font-mono">
+                                  R$ {remaining.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {clientOpenPayments.length > 0 && (
+                    <>
+                      {/* Payment Inputs */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <div className="flex justify-between items-center mb-1">
+                            <label className="block text-xs font-semibold text-slate-700">
+                              Valor Recebido (R$) *
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => setBulkReceiveAmount(clientTotalDebt.toFixed(2))}
+                              className="text-[10px] text-emerald-600 hover:text-emerald-800 font-bold underline cursor-pointer"
+                            >
+                              Quitar Tudo
+                            </button>
+                          </div>
+                          <input
+                            type="number"
+                            step="0.01"
+                            required
+                            placeholder="0,00"
+                            value={bulkReceiveAmount}
+                            onChange={(e) => setBulkReceiveAmount(e.target.value)}
+                            className="block w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono font-bold text-slate-800"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-700 mb-1">
+                            Data do Recebimento *
+                          </label>
+                          <input
+                            type="date"
+                            required
+                            value={bulkPayDate}
+                            onChange={(e) => setBulkPayDate(e.target.value)}
+                            className="block w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none text-slate-800"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">
+                          Forma de Pagamento *
+                        </label>
+                        <select
+                          value={bulkPayMethod}
+                          onChange={(e: any) => setBulkPayMethod(e.target.value)}
+                          className="block w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white text-slate-800 font-medium"
+                        >
+                          <option value="Pix">Pix</option>
+                          <option value="Dinheiro">Dinheiro</option>
+                          <option value="Cartão de Crédito">Cartão de Crédito</option>
+                          <option value="Cartão de Débito">Cartão de Débito</option>
+                          <option value="Boleto">Boleto</option>
+                          <option value="Transferência Bancária">Transferência Bancária</option>
+                        </select>
+                      </div>
+
+                      {/* Info Notice */}
+                      <div className="bg-emerald-50/70 border border-emerald-100 p-3 rounded-xl text-[11px] text-emerald-800 flex items-start gap-2">
+                        <FileCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        <span>
+                          O valor digitado será abatido automaticamente das parcelas mais antigas do cliente em ordem cronológica de vencimento.
+                        </span>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
+                        <button
+                          type="button"
+                          onClick={() => setIsBulkPayModalOpen(false)}
+                          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer transition-colors"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={bulkSubmitting || !bulkReceiveAmount || parseFloat(bulkReceiveAmount) <= 0}
+                          className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-xl text-xs font-bold text-white shadow-md cursor-pointer disabled:opacity-50 transition-colors flex items-center gap-1.5"
+                        >
+                          {bulkSubmitting ? 'Processando...' : 'Confirmar Recebimento'}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </form>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Payment Receipt Modal */}
+      {receiptData && (
+        <PaymentReceipt
+          receiptNumber={receiptData.receiptNumber}
+          paymentDate={receiptData.paymentDate}
+          paymentMethod={receiptData.paymentMethod}
+          totalPaid={receiptData.totalPaid}
+          client={receiptData.client}
+          company={company}
+          lines={receiptData.lines}
+          remainingBalance={receiptData.remainingBalance}
+          operatorName={currentUser?.name || 'Operador'}
+          onClose={() => setReceiptData(null)}
+        />
       )}
     </div>
   );
