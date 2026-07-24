@@ -5,7 +5,6 @@ import fs from 'fs/promises';
 import { existsSync, mkdirSync } from 'fs';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { createServer as createViteServer } from 'vite';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // Extend Express Request type globally
@@ -47,11 +46,15 @@ enum PaymentStatus {
 
 const PORT = 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'servpay-jwt-secret-key-12345';
-const DATA_DIR = path.join(process.cwd(), 'data');
+const DATA_DIR = process.env.VERCEL === '1' ? path.join('/tmp', 'data') : path.join(process.cwd(), 'data');
 
 // Ensure data directory exists
-if (!existsSync(DATA_DIR)) {
-  mkdirSync(DATA_DIR, { recursive: true });
+try {
+  if (!existsSync(DATA_DIR)) {
+    mkdirSync(DATA_DIR, { recursive: true });
+  }
+} catch (e) {
+  console.error('Failed to create DATA_DIR:', e);
 }
 
 // --- SUPABASE CLIENT (lazy — only created when USE_LOCAL_DB is false) ---
@@ -588,15 +591,12 @@ async function initDB() {
 }
 
 // Start Server Wrapper
-async function startServer() {
-  try {
-    await initDB();
-  } catch (err) {
-    console.error('Warning: initDB() failed on startup, continuing anyway:', err);
-  }
+initDB().catch(err => {
+  console.error('Warning: initDB() failed on startup, continuing anyway:', err);
+});
 
-  const app = express();
-  app.use(express.json({ limit: '50mb' })); // support base64 uploads
+export const app = express();
+app.use(express.json({ limit: '50mb' })); // support base64 uploads
 
   // Auth Middleware
   const authenticateToken = (req: express.Request, res: express.Response, next: express.NextFunction): void => {
@@ -1793,24 +1793,32 @@ async function startServer() {
   });
 
   // --- SERVE STATIC FRONTEND AND VITE DEV ENVIRONMENT ---
-  if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-  } else {
+  if (process.env.NODE_ENV !== 'production' && process.env.VERCEL !== '1') {
+    (async () => {
+      try {
+        const { createServer: createViteServer } = await import('vite');
+        const vite = await createViteServer({
+          server: { middlewareMode: true },
+          appType: 'spa',
+        });
+        app.use(vite.middlewares);
+        app.listen(PORT, '0.0.0.0', () => {
+          console.log(`Express server running on http://0.0.0.0:${PORT} (Vite mode)`);
+        });
+      } catch (err) {
+        console.error('Failed to start Vite:', err);
+      }
+    })();
+  } else if (process.env.VERCEL !== '1') {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Express server running on http://0.0.0.0:${PORT} (Static mode)`);
+    });
   }
-
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Express server running on http://0.0.0.0:${PORT}`);
-  });
-}
 
 // Global process error catching
 process.on('uncaughtException', (err) => {
@@ -1821,4 +1829,4 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
-startServer();
+export default app;
