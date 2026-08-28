@@ -495,8 +495,29 @@ export default function Clients({ clients, services, payments = [], company, onR
         ) : (
           filteredClients.map(client => {
             const clientServices = services.filter(s => s.clientId === client.id);
-            const activeServices = clientServices.filter(s => s.status !== 'Finalizado' && s.status !== 'Cancelado').length;
-            const totalSpent = clientServices.reduce((sum, s) => sum + s.finalValue, 0);
+            const clientPayments = payments.filter(p => p.clientId === client.id);
+
+            const openPayments = clientPayments.filter(p => p.status !== 'Pago' && p.status !== 'Cancelado');
+            const todayStr = new Date().toISOString().split('T')[0];
+            const overduePayments = openPayments.filter(p => p.dueDate && p.dueDate < todayStr);
+
+            let openDebt = 0;
+            let openCount = 0;
+            let hasOverdue = false;
+
+            if (clientPayments.length > 0) {
+              openDebt = openPayments.reduce((sum, p) => {
+                const due = (p.amount || 0) - (p.paidAmount || 0);
+                return sum + Math.max(0, due);
+              }, 0);
+              openCount = openPayments.length;
+              hasOverdue = overduePayments.length > 0;
+            } else {
+              const openServices = clientServices.filter(s => s.status !== 'Pago' && s.status !== 'Cancelado');
+              openDebt = openServices.reduce((sum, s) => sum + (s.finalValue || 0), 0);
+              openCount = openServices.length;
+              hasOverdue = openServices.some(s => s.expectedDate && s.expectedDate < todayStr);
+            }
 
             return (
               <motion.div
@@ -505,16 +526,18 @@ export default function Clients({ clients, services, payments = [], company, onR
                 className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col justify-between space-y-4"
               >
                 <div>
+                  {/* Top Bar: Name & Actions */}
                   <div className="flex items-start justify-between">
                     <div>
-                      <h3 className="text-sm font-bold text-slate-900 truncate max-w-[180px] font-sans flex items-center gap-1.5">
+                      <h3 className="text-sm font-bold text-slate-900 truncate max-w-[190px] font-sans flex items-center gap-1.5">
                         {client.name}
                         {client.isFavorite && <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />}
                       </h3>
-                      <span className="text-[10px] text-slate-400 block font-mono mt-0.5">{client.cpfCnpj}</span>
-                      <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-mono font-bold mt-1 inline-block">
-                        Fatura Total: R$ {totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </span>
+                      {client.cpfCnpj ? (
+                        <span className="text-[10px] text-slate-400 block font-mono mt-0.5">CPF/CNPJ: {client.cpfCnpj}</span>
+                      ) : (
+                        <span className="text-[10px] text-slate-400 block font-mono mt-0.5">Sem documento</span>
+                      )}
                     </div>
                     <div className="flex items-center gap-1">
                       <button
@@ -527,7 +550,7 @@ export default function Clients({ clients, services, payments = [], company, onR
                       <button
                         onClick={() => openEditModal(client)}
                         className="p-1.5 hover:bg-slate-50 text-slate-500 hover:text-indigo-600 rounded-lg cursor-pointer transition-colors"
-                        title="Editar"
+                        title="Editar cliente"
                       >
                         <Edit3 className="w-4 h-4" />
                       </button>
@@ -535,7 +558,7 @@ export default function Clients({ clients, services, payments = [], company, onR
                         <button
                           onClick={() => handleDeleteClient(client.id)}
                           className="p-1.5 hover:bg-slate-50 text-slate-400 hover:text-rose-600 rounded-lg cursor-pointer transition-colors"
-                          title="Excluir"
+                          title="Excluir cliente"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -543,7 +566,40 @@ export default function Clients({ clients, services, payments = [], company, onR
                     </div>
                   </div>
 
-                  <div className="mt-4 space-y-2 text-xs text-slate-600">
+                  {/* Highlighted Balance Box: Outstanding Debt */}
+                  <div className={`mt-3.5 p-3 rounded-xl border transition-all ${
+                    openDebt > 0 && hasOverdue
+                      ? 'bg-rose-50/80 border-rose-200 text-rose-900'
+                      : openDebt > 0
+                      ? 'bg-amber-50/80 border-amber-200 text-amber-900'
+                      : 'bg-emerald-50/70 border-emerald-200 text-emerald-900'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider block font-sans opacity-80">
+                        {openDebt > 0 && hasOverdue ? 'Débito Vencido' : openDebt > 0 ? 'Saldo em Aberto' : 'Status Financeiro'}
+                      </span>
+                      <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                        openDebt > 0 && hasOverdue
+                          ? 'bg-rose-600 text-white shadow-xs'
+                          : openDebt > 0
+                          ? 'bg-amber-600 text-white shadow-xs'
+                          : 'bg-emerald-600 text-white shadow-xs'
+                      }`}>
+                        {openDebt > 0 && hasOverdue ? 'Em Débito' : openDebt > 0 ? 'Pendente' : 'Quitado'}
+                      </span>
+                    </div>
+                    <div className="mt-1 flex items-baseline justify-between">
+                      <span className="text-lg font-black font-mono tracking-tight">
+                        R$ {openDebt.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                      <span className="text-[10px] font-semibold opacity-75">
+                        {openDebt > 0 ? `${openCount} fatura(s) em aberto` : 'Sem débitos pendentes'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Contact Info */}
+                  <div className="mt-3.5 space-y-1.5 text-xs text-slate-600">
                     <div className="flex items-center gap-2">
                       <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                       <span className="truncate">{client.phone || '(Sem telefone)'}</span>
@@ -554,28 +610,34 @@ export default function Clients({ clients, services, payments = [], company, onR
                     </div>
                     <div className="flex items-center gap-2">
                       <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      <span className="truncate">{client.city ? `${client.city} - ${client.state}` : '(Sem endereço)'}</span>
+                      <span className="truncate">{client.city ? `${client.city}${client.state ? ' - ' + client.state : ''}` : '(Sem endereço)'}</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Footer specs */}
-                <div className="border-t border-slate-50 pt-3.5 flex items-center justify-between">
+                {/* Footer Actions & Summary */}
+                <div className="border-t border-slate-100 pt-3 flex items-center justify-between">
                   <button
                     onClick={() => setViewHistoryClient(client)}
-                    className="text-xs font-bold text-indigo-600 hover:text-indigo-700 cursor-pointer flex items-center gap-0.5"
+                    className="text-xs font-bold text-indigo-600 hover:text-indigo-700 cursor-pointer flex items-center gap-1 hover:underline"
                   >
-                    Histórico <ChevronRight className="w-3.5 h-3.5" />
+                    Ver Histórico <ChevronRight className="w-3.5 h-3.5" />
                   </button>
-                  <div className="flex items-center gap-3 text-[10px] text-slate-400 font-sans">
-                    <span className="flex items-center gap-0.5 bg-slate-50 border border-slate-100 px-1.5 py-0.5 rounded-md">
-                      <Paperclip className="w-3 h-3 text-slate-400" />
-                      {client.attachments?.length || 0} anexos
-                    </span>
-                    <span className="flex items-center gap-0.5 bg-indigo-50/50 border border-indigo-50 px-1.5 py-0.5 rounded-md text-indigo-700">
-                      <Clock className="w-3 h-3 text-indigo-500" />
-                      {activeServices} em aberto
-                    </span>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handlePrintHistory(client)}
+                      className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-indigo-600 transition-colors cursor-pointer"
+                      title="Imprimir Extrato de Débito"
+                    >
+                      <Printer className="w-3.5 h-3.5" />
+                    </button>
+                    {client.attachments && client.attachments.length > 0 && (
+                      <span className="flex items-center gap-0.5 bg-slate-50 border border-slate-200/60 text-slate-500 px-1.5 py-0.5 rounded-md text-[10px]">
+                        <Paperclip className="w-3 h-3 text-slate-400" />
+                        {client.attachments.length}
+                      </span>
+                    )}
                   </div>
                 </div>
               </motion.div>

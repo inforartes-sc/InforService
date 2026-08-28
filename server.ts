@@ -3,6 +3,7 @@ import express from 'express';
 import path from 'path';
 import fs from 'fs/promises';
 import { existsSync, mkdirSync } from 'fs';
+import os from 'os';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
@@ -288,60 +289,55 @@ async function initDB() {
     }
   }
 
-  // Seed Users
+  // Seed / Ensure required users exist
   let users = await FileDB.getUsers();
 
-  if (process.env.RESET_PASSWORDS === 'true' && users.length > 0) {
-    console.log('RESET_PASSWORDS is true. Resetting passwords for seeded users to admin123/user123...');
-    const superAdminPassword = await bcrypt.hash('admin123', 10);
-    const adminPassword = await bcrypt.hash('admin123', 10);
-    const userPassword = await bcrypt.hash('user123', 10);
+  const superAdminHash = await bcrypt.hash('admin123', 10);
+  const adminHash = await bcrypt.hash('admin123', 10);
+  const userHash = await bcrypt.hash('user123', 10);
 
+  const requiredAccounts = [
+    { id: 'user-super-inforartes', name: 'InforService Admin', email: 'inforartes.ap@gmail.com', passwordHash: superAdminHash, role: UserRole.SUPER_ADMIN },
+    { id: 'user-super', name: 'Super Administrador', email: 'superadmin@admin.com', passwordHash: superAdminHash, role: UserRole.SUPER_ADMIN },
+    { id: 'user-admin', name: 'Administrador Demo', email: 'admin@admin.com', passwordHash: adminHash, role: UserRole.ADMIN },
+    { id: 'user-regular', name: 'Operador Financeiro', email: 'user@user.com', passwordHash: userHash, role: UserRole.USER }
+  ];
+
+  let usersUpdated = false;
+
+  if (process.env.RESET_PASSWORDS === 'true') {
+    console.log('RESET_PASSWORDS is true. Resetting default user passwords to admin123/user123...');
     users.forEach(u => {
-      if (u.email === 'superadmin@admin.com') u.passwordHash = superAdminPassword;
-      if (u.email === 'admin@admin.com') u.passwordHash = adminPassword;
-      if (u.email === 'user@user.com') u.passwordHash = userPassword;
+      const req = requiredAccounts.find(r => r.email.toLowerCase() === u.email.toLowerCase());
+      if (req) {
+        u.passwordHash = req.passwordHash;
+        usersUpdated = true;
+      }
     });
+  }
+
+  for (const reqAcc of requiredAccounts) {
+    const existing = users.find(u => u.email.toLowerCase() === reqAcc.email.toLowerCase());
+    if (!existing) {
+      users.push({
+        id: reqAcc.id,
+        name: reqAcc.name,
+        email: reqAcc.email,
+        passwordHash: reqAcc.passwordHash,
+        role: reqAcc.role,
+        companyId: defaultCompanyId
+      });
+      usersUpdated = true;
+    }
+  }
+
+  if (usersUpdated || users.length === 0) {
     await FileDB.saveUsers(users);
+    console.log('User database updated successfully.');
   }
 
   // Save local copy of users database to inspect current users
   await fs.writeFile(path.join(DATA_DIR, 'users.json'), JSON.stringify(users, null, 2), 'utf-8');
-
-  if (users.length === 0) {
-    const superAdminPassword = await bcrypt.hash('admin123', 10);
-    const adminPassword = await bcrypt.hash('admin123', 10);
-    const userPassword = await bcrypt.hash('user123', 10);
-
-    const defaultUsers = [
-      {
-        id: 'user-super',
-        name: 'Super Administrador',
-        email: 'superadmin@admin.com',
-        passwordHash: superAdminPassword,
-        role: UserRole.SUPER_ADMIN,
-        companyId: defaultCompanyId
-      },
-      {
-        id: 'user-admin',
-        name: 'Administrador Demo',
-        email: 'admin@admin.com',
-        passwordHash: adminPassword,
-        role: UserRole.ADMIN,
-        companyId: defaultCompanyId
-      },
-      {
-        id: 'user-regular',
-        name: 'Operador Financeiro',
-        email: 'user@user.com',
-        passwordHash: userPassword,
-        role: UserRole.USER,
-        companyId: defaultCompanyId
-      }
-    ];
-    await FileDB.saveUsers(defaultUsers);
-    console.log('Seeded default users (superadmin@admin.com, admin@admin.com, user@user.com with password: admin123/user123)');
-  }
 
   // Seed initial Clients if empty to provide rich dashboard visuals immediately (only in demo/non-production mode)
   if (isProduction || process.env.CLEAR_DEMO_DATA === 'true') {
@@ -597,6 +593,18 @@ initDB().catch(err => {
 
 export const app = express();
 app.use(express.json({ limit: '50mb' })); // support base64 uploads
+
+// Enable CORS for local network and cross-origin access
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+    return;
+  }
+  next();
+});
 
   // Auth Middleware
   const authenticateToken = (req: express.Request, res: express.Response, next: express.NextFunction): void => {
@@ -924,8 +932,10 @@ app.use(express.json({ limit: '50mb' })); // support base64 uploads
       const add = Number(serviceData.additions || 0);
       const finalVal = serviceVal - disc + add;
 
+      const { generateFinancialPlan, skipAutoPayment, ...cleanServiceData } = serviceData;
+
       const newService = {
-        ...serviceData,
+        ...cleanServiceData,
         id: 'srv-' + Math.random().toString(36).substring(2, 9),
         serviceNumber,
         serviceValue: serviceVal,
@@ -940,32 +950,36 @@ app.use(express.json({ limit: '50mb' })); // support base64 uploads
       services.push(newService);
       await FileDB.saveServices(services);
 
-      // Automatically generate a single payment installment (Conta a Receber) for the new service
-      const payments = await FileDB.getPayments();
-      const isPaid = newService.status === ServiceStatus.PAGO;
-      const newPayment = {
-        id: 'pay-' + Math.random().toString(36).substring(2, 9),
-        serviceId: newService.id,
-        clientId: newService.clientId,
-        amount: finalVal,
-        dueDate: newService.expectedDate || newService.requestDate || new Date().toISOString().split('T')[0],
-        paymentDate: isPaid ? (newService.completionDate || new Date().toISOString().split('T')[0]) : undefined,
-        paidAmount: isPaid ? finalVal : 0,
-        interest: 0,
-        penalty: 0,
-        discount: disc,
-        paymentMethod: serviceData.paymentMethod || 'Pix',
-        observation: `Gerado automaticamente a partir da OS ${serviceNumber}`,
-        installmentNumber: 1,
-        totalInstallments: 1,
-        status: isPaid ? PaymentStatus.PAGO : PaymentStatus.PENDENTE,
-        companyId: req.user.companyId,
-        createdAt: new Date().toISOString()
-      };
-      payments.push(newPayment);
-      await FileDB.savePayments(payments);
+      // Only generate default payment if generateFinancialPlan is not false AND skipAutoPayment is not true
+      const shouldGenerateDefaultPayment = generateFinancialPlan !== false && !skipAutoPayment && generateFinancialPlan === undefined;
 
-      await addAuditLog(req.user.id, req.user.name, 'CADASTRO', `Criou serviço/OS: ${serviceNumber} e gerou parcela financeira`, req);
+      if (shouldGenerateDefaultPayment) {
+        const payments = await FileDB.getPayments();
+        const isPaid = newService.status === ServiceStatus.PAGO;
+        const newPayment = {
+          id: 'pay-' + Math.random().toString(36).substring(2, 9),
+          serviceId: newService.id,
+          clientId: newService.clientId,
+          amount: finalVal,
+          dueDate: newService.expectedDate || newService.requestDate || new Date().toISOString().split('T')[0],
+          paymentDate: isPaid ? (newService.completionDate || new Date().toISOString().split('T')[0]) : undefined,
+          paidAmount: isPaid ? finalVal : 0,
+          interest: 0,
+          penalty: 0,
+          discount: disc,
+          paymentMethod: serviceData.paymentMethod || 'Pix',
+          observation: `Gerado automaticamente a partir da OS ${serviceNumber}`,
+          installmentNumber: 1,
+          totalInstallments: 1,
+          status: isPaid ? PaymentStatus.PAGO : PaymentStatus.PENDENTE,
+          companyId: req.user.companyId,
+          createdAt: new Date().toISOString()
+        };
+        payments.push(newPayment);
+        await FileDB.savePayments(payments);
+      }
+
+      await addAuditLog(req.user.id, req.user.name, 'CADASTRO', `Criou serviço/OS: ${serviceNumber}${shouldGenerateDefaultPayment ? ' e gerou parcela financeira' : ''}`, req);
 
       // Auto trigger system notification
       const clients = await FileDB.getClients();
@@ -1792,6 +1806,26 @@ app.use(express.json({ limit: '50mb' })); // support base64 uploads
     }
   });
 
+  function logServerAddresses(port: number, mode: string) {
+    console.log(`\n  🚀 Servidor InforService rodando (${mode}):`);
+    console.log(`  ➜ Local:   http://localhost:${port}/`);
+    
+    const interfaces = os.networkInterfaces();
+    let foundIp = false;
+    for (const name of Object.keys(interfaces)) {
+      for (const net of interfaces[name] || []) {
+        if (net.family === 'IPv4' && !net.internal) {
+          console.log(`  ➜ Rede:    http://${net.address}:${port}/`);
+          foundIp = true;
+        }
+      }
+    }
+    if (!foundIp) {
+      console.log(`  ➜ Rede:    http://0.0.0.0:${port}/`);
+    }
+    console.log(`  Dispositivos na mesma rede Wi-Fi/LAN podem acessar usando o IP de Rede acima.\n`);
+  }
+
   // --- SERVE STATIC FRONTEND AND VITE DEV ENVIRONMENT ---
   if (process.env.NODE_ENV !== 'production' && process.env.VERCEL !== '1') {
     (async () => {
@@ -1803,7 +1837,7 @@ app.use(express.json({ limit: '50mb' })); // support base64 uploads
         });
         app.use(vite.middlewares);
         app.listen(PORT, '0.0.0.0', () => {
-          console.log(`Express server running on http://0.0.0.0:${PORT} (Vite mode)`);
+          logServerAddresses(PORT, 'Vite dev mode');
         });
       } catch (err) {
         console.error('Failed to start Vite:', err);
@@ -1816,7 +1850,7 @@ app.use(express.json({ limit: '50mb' })); // support base64 uploads
       res.sendFile(path.join(distPath, 'index.html'));
     });
     app.listen(PORT, '0.0.0.0', () => {
-      console.log(`Express server running on http://0.0.0.0:${PORT} (Static mode)`);
+      logServerAddresses(PORT, 'Modo produção');
     });
   }
 

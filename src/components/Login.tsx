@@ -150,6 +150,30 @@ export default function Login({ onLoginSuccess }: LoginProps) {
               </button>
             </div>
           </form>
+
+          {/* Quick Access Account Shortcuts */}
+          <div className="mt-6 pt-6 border-t border-slate-100 space-y-2">
+            <p className="text-xs text-center font-semibold text-slate-500">Contas para Acesso Rápido:</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => handleDemoLogin('inforartes.ap@gmail.com')}
+                className="px-2.5 py-1.5 bg-slate-50 hover:bg-indigo-50 border border-slate-200 rounded-lg text-[11px] font-medium text-slate-700 hover:text-indigo-600 transition-colors text-center cursor-pointer"
+              >
+                inforartes.ap@gmail.com
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDemoLogin('admin@admin.com')}
+                className="px-2.5 py-1.5 bg-slate-50 hover:bg-indigo-50 border border-slate-200 rounded-lg text-[11px] font-medium text-slate-700 hover:text-indigo-600 transition-colors text-center cursor-pointer"
+              >
+                admin@admin.com
+              </button>
+            </div>
+            <p className="text-[10px] text-center text-slate-400 mt-1">
+              Senha padrão: <code className="font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-600">admin123</code>
+            </p>
+          </div>
         </div>
       </motion.div>
     </div>

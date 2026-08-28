@@ -153,7 +153,9 @@ export default function Services({ services, clients, onRefresh, currentUser, on
       discount,
       additions,
       finalValue,
-      status
+      status,
+      generateFinancialPlan,
+      skipAutoPayment: true
     };
 
     try {
