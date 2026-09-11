@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { Client, Service, Attachment } from '../types';
+import { Client, Service, Attachment, PaymentMethod, ServiceStatus, PaymentStatus } from '../types';
 import { api } from '../lib/api';
 import { 
   Plus, 
@@ -25,7 +25,10 @@ import {
   CheckCircle, 
   X,
   FileSpreadsheet,
-  Printer
+  Printer,
+  MessageSquare,
+  DollarSign,
+  Check
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -43,6 +46,78 @@ export default function Clients({ clients, services, payments = [], company, onR
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [viewHistoryClient, setViewHistoryClient] = useState<Client | null>(null);
+  const [viewPendingClient, setViewPendingClient] = useState<Client | null>(null);
+
+  // Quick Receive Modal State inside Pending Drawer
+  const [receiveItemModal, setReceiveItemModal] = useState<{
+    type: 'payment' | 'service' | 'bulk';
+    item?: any;
+    clientId: string;
+    title: string;
+    defaultAmount: number;
+  } | null>(null);
+
+  const [receiveAmount, setReceiveAmount] = useState<number>(0);
+  const [receiveMethod, setReceiveMethod] = useState<PaymentMethod>(PaymentMethod.PIX);
+  const [receiveDate, setReceiveDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [receiveObs, setReceiveObs] = useState<string>('');
+  const [receiveSubmitting, setReceiveSubmitting] = useState<boolean>(false);
+
+  const handleConfirmReceive = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!receiveItemModal || receiveAmount <= 0) return;
+    setReceiveSubmitting(true);
+
+    try {
+      if (receiveItemModal.type === 'payment') {
+        const p = receiveItemModal.item;
+        const previousPaid = p.paidAmount || 0;
+        const newPaidAmount = previousPaid + receiveAmount;
+        const isFull = newPaidAmount >= (p.amount || 0);
+
+        await api.updatePayment(p.id, {
+          paidAmount: newPaidAmount,
+          status: isFull ? PaymentStatus.PAGO : PaymentStatus.PARCIAL,
+          paymentDate: receiveDate,
+          paymentMethod: receiveMethod,
+          observation: receiveObs ? (p.observation ? `${p.observation} | ${receiveObs}` : receiveObs) : p.observation
+        });
+
+        // Check if all payments of related service are fully paid
+        if (p.serviceId) {
+          const servPayments = payments.filter(pm => pm.serviceId === p.serviceId);
+          const otherUnpaid = servPayments.filter(pm => pm.id !== p.id && pm.status !== PaymentStatus.PAGO);
+          if (isFull && otherUnpaid.length === 0) {
+            await api.updateService(p.serviceId, {
+              status: ServiceStatus.PAGO,
+              completionDate: receiveDate
+            });
+          }
+        }
+      } else if (receiveItemModal.type === 'service') {
+        const s = receiveItemModal.item;
+        await api.updateService(s.id, {
+          status: ServiceStatus.PAGO,
+          completionDate: receiveDate
+        });
+      } else if (receiveItemModal.type === 'bulk') {
+        await api.bulkReceivePayments({
+          clientId: receiveItemModal.clientId,
+          amount: receiveAmount,
+          paymentDate: receiveDate,
+          paymentMethod: receiveMethod
+        });
+      }
+
+      setReceiveItemModal(null);
+      setReceiveObs('');
+      onRefresh();
+    } catch (err: any) {
+      alert(err.message || 'Erro ao registrar recebimento.');
+    } finally {
+      setReceiveSubmitting(false);
+    }
+  };
 
   // Print formal debt statement (Extrato de Débito) for the client
   const handlePrintHistory = (client: Client) => {
@@ -616,15 +691,41 @@ export default function Clients({ clients, services, payments = [], company, onR
                 </div>
 
                 {/* Footer Actions & Summary */}
-                <div className="border-t border-slate-100 pt-3 flex items-center justify-between">
+                <div className="border-t border-slate-100 pt-3 flex items-center justify-between gap-1.5">
                   <button
                     onClick={() => setViewHistoryClient(client)}
-                    className="text-xs font-bold text-indigo-600 hover:text-indigo-700 cursor-pointer flex items-center gap-1 hover:underline"
+                    className="text-xs font-bold text-indigo-600 hover:text-indigo-700 cursor-pointer flex items-center gap-0.5 hover:underline shrink-0"
+                    title="Ver histórico completo de serviços"
                   >
                     Ver Histórico <ChevronRight className="w-3.5 h-3.5" />
                   </button>
 
-                  <div className="flex items-center gap-2">
+                  {/* Button to view ONLY pending/unpaid invoices */}
+                  <button
+                    onClick={() => setViewPendingClient(client)}
+                    className={`text-[11px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer border shadow-2xs ${
+                      openDebt > 0 && hasOverdue
+                        ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200/80'
+                        : openDebt > 0
+                        ? 'bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200/80'
+                        : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
+                    }`}
+                    title="Visualizar somente faturas pendentes (não pagas)"
+                  >
+                    <Clock className={`w-3.5 h-3.5 ${
+                      openDebt > 0 && hasOverdue ? 'text-rose-600' : openDebt > 0 ? 'text-amber-600' : 'text-slate-400'
+                    }`} />
+                    <span className="whitespace-nowrap">Ver Pendentes</span>
+                    {openCount > 0 && (
+                      <span className={`text-[10px] font-extrabold px-1.5 py-0.2 rounded-full ${
+                        openDebt > 0 && hasOverdue ? 'bg-rose-600 text-white' : 'bg-amber-600 text-white'
+                      }`}>
+                        {openCount}
+                      </span>
+                    )}
+                  </button>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <button
                       onClick={() => handlePrintHistory(client)}
                       className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-indigo-600 transition-colors cursor-pointer"
@@ -645,6 +746,423 @@ export default function Clients({ clients, services, payments = [], company, onR
           })
         )}
       </div>
+
+      {/* VIEW PENDING INVOICES DRAWER / MODAL */}
+      {viewPendingClient && (() => {
+        const clientServices = services.filter(s => s.clientId === viewPendingClient.id);
+        const clientPayments = payments.filter(p => p.clientId === viewPendingClient.id);
+
+        const openPayments = clientPayments.filter(p => p.status !== 'Pago' && p.status !== 'Cancelado');
+        const openServices = clientServices.filter(s => s.status !== 'Pago' && s.status !== 'Cancelado');
+
+        const todayStr = new Date().toISOString().split('T')[0];
+        const usePayments = clientPayments.length > 0;
+
+        let totalDebt = 0;
+        let pendingCount = 0;
+        let hasOverdue = false;
+
+        if (usePayments) {
+          totalDebt = openPayments.reduce((sum, p) => {
+            const due = (p.amount || 0) - (p.paidAmount || 0);
+            return sum + Math.max(0, due);
+          }, 0);
+          pendingCount = openPayments.length;
+          hasOverdue = openPayments.some(p => p.dueDate && p.dueDate < todayStr);
+        } else {
+          totalDebt = openServices.reduce((sum, s) => sum + (s.finalValue || 0), 0);
+          pendingCount = openServices.length;
+          hasOverdue = openServices.some(s => s.expectedDate && s.expectedDate < todayStr);
+        }
+
+        const phoneClean = (viewPendingClient.whatsapp || viewPendingClient.phone || '').replace(/\D/g, '');
+
+        const handleSendWhatsapp = () => {
+          if (!phoneClean) return;
+          const msg = `Olá ${viewPendingClient.name}! Consta em nosso sistema ${pendingCount} fatura(s) pendente(s) no valor total de R$ ${totalDebt.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}.\n\nQualquer dúvida, estamos à disposição!`;
+          window.open(`https://wa.me/55${phoneClean}?text=${encodeURIComponent(msg)}`, '_blank');
+        };
+
+        return (
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex justify-end z-50">
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              className="bg-white w-full max-w-lg h-full shadow-2xl p-6 overflow-y-auto flex flex-col justify-between space-y-6"
+            >
+              <div>
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-amber-700 bg-amber-50 border border-amber-200/60 px-2.5 py-0.5 rounded-full tracking-wider inline-block mb-1 font-sans">
+                      Faturas Não Pagas / Pendentes
+                    </span>
+                    <h3 className="text-lg font-bold text-slate-900 font-sans">{viewPendingClient.name}</h3>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => handlePrintHistory(viewPendingClient)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg text-xs font-semibold cursor-pointer transition-colors border border-amber-200/60"
+                      title="Imprimir Extrato de Débito"
+                    >
+                      <Printer className="w-3.5 h-3.5 text-amber-600" /> Extrato
+                    </button>
+                    <button
+                      onClick={() => setViewPendingClient(null)}
+                      className="p-1.5 hover:bg-slate-100 rounded-lg cursor-pointer text-slate-500 transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Summary Banner */}
+                <div className={`rounded-2xl p-4 text-white shadow-md mt-5 flex items-center justify-between ${
+                  hasOverdue
+                    ? 'bg-gradient-to-r from-rose-600 to-red-700'
+                    : totalDebt > 0
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-600'
+                    : 'bg-gradient-to-r from-emerald-500 to-teal-600'
+                }`}>
+                  <div>
+                    <span className="text-xs opacity-90 block font-medium">Total em Aberto / Não Pago</span>
+                    <span className="text-2xl font-black font-mono">
+                      R$ {totalDebt.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold font-mono">
+                      {pendingCount} fatura(s)
+                    </span>
+                  </div>
+                </div>
+
+                {/* WhatsApp & Bulk Receive Quick Actions */}
+                {pendingCount > 0 && (
+                  <div className="mt-3 space-y-2">
+                    <button
+                      onClick={() => {
+                        setReceiveItemModal({
+                          type: 'bulk',
+                          clientId: viewPendingClient.id,
+                          title: `Dar Baixa Geral — ${viewPendingClient.name}`,
+                          defaultAmount: totalDebt
+                        });
+                        setReceiveAmount(totalDebt);
+                        setReceiveMethod(PaymentMethod.PIX);
+                        setReceiveDate(todayStr);
+                      }}
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-colors"
+                    >
+                      <DollarSign className="w-4 h-4 text-emerald-200" /> Receber Saldo Total (Quitar TUDO — R$ {totalDebt.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
+                    </button>
+
+                    {phoneClean && (
+                      <button
+                        onClick={handleSendWhatsapp}
+                        className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 px-4 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors border border-slate-200"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5 text-emerald-600" /> Enviar Cobrança / Lembrete via WhatsApp
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Pending Invoices / Payments List */}
+                <div className="mt-6">
+                  <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-amber-500" />
+                    Faturas e Parcelas Pendentes
+                  </h4>
+
+                  {usePayments ? (
+                    openPayments.length === 0 ? (
+                      <div className="text-center py-10 bg-slate-50 rounded-2xl border border-slate-100">
+                        <CheckCircle className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
+                        <p className="text-sm font-bold text-slate-800">Nenhuma fatura pendente!</p>
+                        <p className="text-xs text-slate-400 mt-1">Este cliente está em dia com todos os pagamentos.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {openPayments.map((p, i) => {
+                          const relService = services.find(s => s.id === p.serviceId);
+                          const isOverdue = p.dueDate && p.dueDate < todayStr;
+                          const dueVal = (p.amount || 0) - (p.paidAmount || 0);
+
+                          return (
+                            <div
+                              key={p.id || i}
+                              className={`p-4 rounded-xl border transition-all ${
+                                isOverdue
+                                  ? 'bg-rose-50/60 border-rose-200'
+                                  : 'bg-amber-50/40 border-amber-200'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  <span className="text-[10px] font-bold text-indigo-600 font-mono block">
+                                    {relService?.serviceNumber || `FAT-${String(i + 1).padStart(3, '0')}`}
+                                  </span>
+                                  <h5 className="text-xs font-bold text-slate-800 mt-0.5">
+                                    {relService?.serviceType || p.observation || 'Parcela de Serviço'}
+                                  </h5>
+                                  <p className="text-[11px] text-slate-500 mt-0.5">
+                                    Parcela: <span className="font-semibold">{p.installmentNumber ? `${p.installmentNumber}/${p.totalInstallments}` : '1/1'}</span>
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  <span className="text-sm font-extrabold text-slate-900 font-mono block">
+                                    R$ {dueVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  </span>
+                                  <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-bold mt-1 uppercase ${
+                                    isOverdue
+                                      ? 'bg-rose-600 text-white'
+                                      : 'bg-amber-600 text-white'
+                                  }`}>
+                                    {isOverdue ? 'Vencida' : 'Pendente'}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="mt-3 pt-2.5 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-600">
+                                <span>
+                                  Vencimento: <strong className={isOverdue ? 'text-rose-600 font-bold' : ''}>
+                                    {p.dueDate ? new Date(p.dueDate + 'T12:00:00').toLocaleDateString('pt-BR') : 'Sem data'}
+                                  </strong>
+                                </span>
+                                <button
+                                  onClick={() => {
+                                    setReceiveItemModal({
+                                      type: 'payment',
+                                      item: p,
+                                      clientId: p.clientId,
+                                      title: relService?.serviceType || p.observation || 'Parcela de Serviço',
+                                      defaultAmount: dueVal
+                                    });
+                                    setReceiveAmount(dueVal);
+                                    setReceiveMethod(PaymentMethod.PIX);
+                                    setReceiveDate(todayStr);
+                                  }}
+                                  className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs cursor-pointer transition-colors"
+                                  title="Receber este pagamento"
+                                >
+                                  <DollarSign className="w-3.5 h-3.5" /> Receber Pagamento
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )
+                  ) : (
+                    // Fallback to open services if no payment records exist
+                    openServices.length === 0 ? (
+                      <div className="text-center py-10 bg-slate-50 rounded-2xl border border-slate-100">
+                        <CheckCircle className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
+                        <p className="text-sm font-bold text-slate-800">Nenhuma fatura pendente!</p>
+                        <p className="text-xs text-slate-400 mt-1">Este cliente não possui serviços em aberto.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {openServices.map(s => {
+                          const isOverdue = s.expectedDate && s.expectedDate < todayStr;
+                          return (
+                            <div
+                              key={s.id}
+                              className={`p-4 rounded-xl border transition-all ${
+                                isOverdue
+                                  ? 'bg-rose-50/60 border-rose-200'
+                                  : 'bg-amber-50/40 border-amber-200'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  <span className="text-[10px] font-bold text-indigo-600 font-mono block">
+                                    {s.serviceNumber}
+                                  </span>
+                                  <h5 className="text-xs font-bold text-slate-800 mt-0.5">
+                                    {s.serviceType}
+                                  </h5>
+                                  <p className="text-[11px] text-slate-500 mt-0.5">
+                                    {s.category}
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  <span className="text-sm font-extrabold text-slate-900 font-mono block">
+                                    R$ {s.finalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  </span>
+                                  <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-bold mt-1 uppercase ${
+                                    isOverdue
+                                      ? 'bg-rose-600 text-white'
+                                      : 'bg-amber-600 text-white'
+                                  }`}>
+                                    {isOverdue ? 'Vencida' : s.status}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="mt-3 pt-2.5 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-600">
+                                <span>
+                                  Previsão: <strong className={isOverdue ? 'text-rose-600 font-bold' : ''}>
+                                    {s.expectedDate ? new Date(s.expectedDate + 'T12:00:00').toLocaleDateString('pt-BR') : 'Sem data'}
+                                  </strong>
+                                </span>
+                                <button
+                                  onClick={() => {
+                                    setReceiveItemModal({
+                                      type: 'service',
+                                      item: s,
+                                      clientId: s.clientId,
+                                      title: s.serviceType || 'Serviço',
+                                      defaultAmount: s.finalValue
+                                    });
+                                    setReceiveAmount(s.finalValue);
+                                    setReceiveMethod(PaymentMethod.PIX);
+                                    setReceiveDate(todayStr);
+                                  }}
+                                  className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs cursor-pointer transition-colors"
+                                  title="Receber este pagamento"
+                                >
+                                  <DollarSign className="w-3.5 h-3.5" /> Receber Pagamento
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+
+              {/* Bottom Drawer Actions */}
+              <div className="space-y-2 pt-4 border-t border-slate-100">
+                <button
+                  onClick={() => handlePrintHistory(viewPendingClient)}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl text-xs font-semibold font-sans cursor-pointer flex items-center justify-center gap-2 transition-colors shadow-xs"
+                >
+                  <Printer className="w-4 h-4" /> Imprimir Extrato Completo de Débito
+                </button>
+                <button
+                  onClick={() => setViewPendingClient(null)}
+                  className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl text-xs font-semibold font-sans cursor-pointer transition-colors"
+                >
+                  Fechar
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        );
+      })()}
+
+      {/* QUICK RECEIVE PAYMENT MODAL */}
+      {receiveItemModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[60] p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 space-y-5"
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full font-sans">
+                  Dar Baixa em Pagamento
+                </span>
+                <h3 className="text-base font-bold text-slate-900 font-sans mt-1">
+                  {receiveItemModal.title}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReceiveItemModal(null)}
+                className="p-1 hover:bg-slate-100 rounded text-slate-500 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmReceive} className="space-y-4 font-sans">
+              <div className="bg-emerald-50/70 p-3.5 rounded-xl border border-emerald-200/80">
+                <span className="text-xs text-emerald-800 font-medium block">Valor Pendente a Receber:</span>
+                <span className="text-2xl font-black text-emerald-900 font-mono">
+                  R$ {receiveItemModal.defaultAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700">Valor Sendo Pago Agora (R$) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  min="0.01"
+                  max={receiveItemModal.defaultAmount}
+                  value={receiveAmount || ''}
+                  onChange={(e) => setReceiveAmount(parseFloat(e.target.value) || 0)}
+                  className="mt-1 block w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono font-bold"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700">Forma de Pagamento *</label>
+                  <select
+                    value={receiveMethod}
+                    onChange={(e: any) => setReceiveMethod(e.target.value)}
+                    className="mt-1 block w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white font-sans"
+                  >
+                    <option value="Pix">Pix</option>
+                    <option value="Dinheiro">Dinheiro</option>
+                    <option value="Cartão de Crédito">Cartão de Crédito</option>
+                    <option value="Cartão de Débito">Cartão de Débito</option>
+                    <option value="Boleto">Boleto</option>
+                    <option value="Transferência Bancária">Transferência Bancária</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700">Data do Pagamento *</label>
+                  <input
+                    type="date"
+                    required
+                    value={receiveDate}
+                    onChange={(e) => setReceiveDate(e.target.value)}
+                    className="mt-1 block w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none font-sans"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700">Observação / Comprovante (Opcional)</label>
+                <input
+                  type="text"
+                  placeholder="Ex: Pago via Chave Pix CPF"
+                  value={receiveObs}
+                  onChange={(e) => setReceiveObs(e.target.value)}
+                  className="mt-1 block w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none font-sans"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="submit"
+                  disabled={receiveSubmitting}
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-colors shadow-xs flex items-center justify-center gap-1.5"
+                >
+                  <Check className="w-4 h-4" /> {receiveSubmitting ? 'Confirmando...' : 'Confirmar Recebimento'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setReceiveItemModal(null)}
+                  className="px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold cursor-pointer transition-colors"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
 
       {/* VIEW HISTORY DRAWER / MODAL */}
       {viewHistoryClient && (

@@ -59,15 +59,22 @@ export default function App() {
   useEffect(() => {
     const checkAuth = async () => {
       const token = getToken();
+      const stored = getStoredUser();
       if (token) {
         try {
           const user = await api.getCurrentUser();
           setCurrentUser(user);
         } catch (err) {
           console.error('Authentication check failed:', err);
-          removeToken();
-          setCurrentUser(null);
+          if (stored) {
+            setCurrentUser(stored);
+          } else {
+            removeToken();
+            setCurrentUser(null);
+          }
         }
+      } else if (stored) {
+        setCurrentUser(stored);
       } else {
         setCurrentUser(null);
       }

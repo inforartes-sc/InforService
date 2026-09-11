@@ -50,7 +50,9 @@ async function apiFetch(endpoint: string, options: RequestInit = {}): Promise<an
   });
 
   if (response.status === 401 || response.status === 403) {
-    removeToken();
+    if (!endpoint.includes('/auth/login')) {
+      removeToken();
+    }
     const text = await response.text();
     let msg = 'Sessão expirada. Por favor, faça login novamente.';
     try {

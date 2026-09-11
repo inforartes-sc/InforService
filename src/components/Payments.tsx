@@ -418,10 +418,11 @@ export default function Payments({ payments, clients, services, company, onRefre
     
     const clientName = client ? client.name.toLowerCase() : '';
     const serviceNum = service ? service.serviceNumber.toLowerCase() : '';
+    const serviceTitle = service ? (service.serviceType || service.description || '').toLowerCase() : '';
     const query = searchQuery.toLowerCase();
 
-    // Text search (Client Name, O.S. Number)
-    const matchesSearch = clientName.includes(query) || serviceNum.includes(query) || p.observation.toLowerCase().includes(query);
+    // Text search (Client Name, O.S. Number, Service Title, Observation)
+    const matchesSearch = clientName.includes(query) || serviceNum.includes(query) || serviceTitle.includes(query) || p.observation.toLowerCase().includes(query);
 
     // Filter statuses
     let matchesStatus = true;
@@ -562,7 +563,7 @@ export default function Payments({ payments, clients, services, company, onRefre
               <tr className="bg-slate-50/50">
                 <th scope="col" className="px-6 py-3.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">Vencimento</th>
                 <th scope="col" className="px-6 py-3.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">Cliente / O.S.</th>
-                <th scope="col" className="px-6 py-3.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">Observação Parcela</th>
+                <th scope="col" className="px-6 py-3.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">Título / Descrição da Cobrança</th>
                 <th scope="col" className="px-6 py-3.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">Forma</th>
                 <th scope="col" className="px-6 py-3.5 text-right text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">Valor Parcela</th>
                 <th scope="col" className="px-6 py-3.5 text-center text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">Status</th>
@@ -597,6 +598,8 @@ export default function Payments({ payments, clients, services, company, onRefre
                     badgeColor = 'bg-emerald-50 text-emerald-600 border-emerald-100';
                   }
 
+                  const hasCustomObs = p.observation && !p.observation.startsWith('Gerado auto');
+
                   return (
                     <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap text-xs font-mono text-slate-700">
@@ -606,9 +609,14 @@ export default function Payments({ payments, clients, services, company, onRefre
                         <span className="text-xs font-bold text-slate-800 block truncate max-w-[150px]">{client ? client.name : 'Cliente Excluído'}</span>
                         <span className="text-[10px] text-indigo-600 font-mono block mt-0.5">{service ? service.serviceNumber : 'Sem O.S.'}</span>
                       </td>
-                      <td className="px-6 py-4 text-xs text-slate-600">
-                        {p.observation || `Parcela ${p.installmentNumber} de ${p.totalInstallments}`}
-                        <span className="text-[10px] text-slate-400 block mt-0.5">Nº da parcela: {p.installmentNumber} de {p.totalInstallments}</span>
+                      <td className="px-6 py-4 text-xs text-slate-600 max-w-[320px]">
+                        <span className="font-bold text-slate-800 text-xs block truncate" title={service?.serviceType || p.observation}>
+                          {service?.serviceType || (hasCustomObs ? p.observation : 'Serviço Prestado')}
+                        </span>
+                        <span className="text-[10px] text-slate-500 block mt-0.5 font-sans">
+                          Nº da parcela: <strong className="font-semibold text-slate-700">{p.installmentNumber} de {p.totalInstallments}</strong>
+                          {hasCustomObs && p.observation !== service?.serviceType ? ` • ${p.observation}` : ''}
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-xs text-slate-500">
                         {p.paymentMethod}

@@ -5,6 +5,30 @@
     "role": "SUPER_ADMIN",
     "email": "inforartes.ap@gmail.com",
     "companyId": "comp-1",
-    "passwordHash": "$2b$10$IOrzrGWuDOa/bbomihELPOasmseNUI980MID9.wMpdW7wwdcuCK8W"
+    "passwordHash": "$2b$10$nTg103a5yrDRmTqJkwtXde/07rzvMAkkHUi6KIbiIsoLHRI7aP.6u"
+  },
+  {
+    "id": "user-super",
+    "name": "Super Administrador",
+    "email": "superadmin@admin.com",
+    "passwordHash": "$2b$10$nTg103a5yrDRmTqJkwtXde/07rzvMAkkHUi6KIbiIsoLHRI7aP.6u",
+    "role": "SUPER_ADMIN",
+    "companyId": "comp-1"
+  },
+  {
+    "id": "user-admin",
+    "name": "Administrador Demo",
+    "email": "admin@admin.com",
+    "passwordHash": "$2b$10$n6pvI9t5XWsvKctbh2Tw8eNXQEpIViLMOJ2kkenKXzJP9hnNBXS56",
+    "role": "ADMIN",
+    "companyId": "comp-1"
+  },
+  {
+    "id": "user-regular",
+    "name": "Operador Financeiro",
+    "email": "user@user.com",
+    "passwordHash": "$2b$10$Ccu9W9OhMYyrb6DcxeLHweK4s0txleZjTDmSnTnL/Jps6IDuTm2wm",
+    "role": "USER",
+    "companyId": "comp-1"
   }
 ]
